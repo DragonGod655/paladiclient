@@ -28,6 +28,14 @@ repositories {
         name = "ViaVersion"
         url = uri("https://repo.viaversion.com")
     }
+    maven {
+        name = "SeedFinding"
+        url = uri("https://maven.seedfinding.com/")
+    }
+    maven {
+        name = "SeedFindingSnapshots"
+        url = uri("https://maven-snapshots.seedfinding.com/")
+    }
     mavenCentral()
 
     exclusiveContent {
@@ -92,6 +100,13 @@ dependencies {
     jij(libs.reflections)
     jij(libs.netty.handler.proxy) { isTransitive = false }
     jij(libs.netty.codec.socks) { isTransitive = false }
+    jij("com.seedfinding:mc_math:ffd2edcfcc0d18147549c88cc7d8ec6cf21b5b91") { isTransitive = false }
+    jij("com.seedfinding:mc_seed:1ead6fcefe7e8de4b3d60cd6c4e993f1e8f33409") { isTransitive = false }
+    jij("com.seedfinding:mc_core:1.210.0") { isTransitive = false }
+    jij("com.seedfinding:mc_noise:7e3ba65e181796c4a2a1c8881d840b2254b92962") { isTransitive = false }
+    jij("com.seedfinding:mc_biome:41a42cb9019a552598f12089059538853e18ec78") { isTransitive = false }
+    jij("com.seedfinding:mc_terrain:b4246cbd5880c4f8745ccb90e1b102bde3448126") { isTransitive = false }
+    jij("com.seedfinding:mc_feature:919b7e513cc1e87e029a9cd703fc4e2dc8686229") { isTransitive = false }
     jij(libs.waybackauthlib)
 }
 
@@ -144,7 +159,7 @@ afterEvaluate {
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/meteor-client.accesswidener")
+    accessWidenerPath = file("src/main/resources/paladi-client.accesswidener")
 }
 
 tasks {
@@ -184,7 +199,7 @@ tasks {
         from(sourceSets["launcher"].output)
 
         manifest {
-            attributes["Main-Class"] = "meteordevelopment.meteorclient.Main"
+            attributes["Main-Class"] = "paladi.client.Main"
         }
     }
 
@@ -216,7 +231,7 @@ publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
-            artifactId = "meteor-client"
+            artifactId = "paladi-client"
 
             version = "${libs.versions.minecraft.get()}-SNAPSHOT"
         }

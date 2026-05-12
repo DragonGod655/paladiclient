@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "package": "paladi.client.mixin.viafabricplus",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "paladi.client.MixinPlugin",
+  "client": [
+    "GeneralSettingsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

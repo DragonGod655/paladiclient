@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "paladi.client.mixin.lithium",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "paladi.client.MixinPlugin",
+  "client": [
+    "ChunkAwareBlockCollisionSweeperMixin",
+    "LithiumEntityCollisionsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

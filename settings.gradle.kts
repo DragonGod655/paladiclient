@@ -9,4 +9,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "meteor-client"
+rootProject.name = "paladi-client"

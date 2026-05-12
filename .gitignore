@@ -16,3 +16,13 @@ logs
 .idea/*
 !.idea/copyright/*
 !.idea/scopes/*
+
+*.zip
+krypton_sample.jar
+krypton_source/
+meteor-rejects/
+bane_pack/
+temp_extracted/
+bane_chibi_v2/
+build_log.txt
+.vscode/

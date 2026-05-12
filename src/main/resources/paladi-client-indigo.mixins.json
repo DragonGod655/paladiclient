@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "paladi.client.mixin.indigo",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "paladi.client.MixinPlugin",
+  "client": [
+    "AbstractTerrainRenderContextMixin",
+    "BlockRenderInfoMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

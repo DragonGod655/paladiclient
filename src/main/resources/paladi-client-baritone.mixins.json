@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "paladi.client.mixin.baritone",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "paladi.client.MixinPlugin",
+  "client": [
+    "ComeCommandMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
