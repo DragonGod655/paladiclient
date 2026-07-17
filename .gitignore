@@ -26,3 +26,9 @@ temp_extracted/
 bane_chibi_v2/
 build_log.txt
 .vscode/
+
+# Local license service data and credentials
+licenses.db
+licenses.db-*
+__pycache__/
+.env

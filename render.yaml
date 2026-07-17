@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: paladi-license
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 1 --threads 4 --bind 0.0.0.0:$PORT paladiweb:app
+    envVars:
+      - key: PALADI_SECRET_KEY
+        generateValue: true
+      - key: PALADI_ADMIN_PASSWORD
+        sync: false
+      - key: PALADI_DB_FILE
+        value: /var/data/licenses.db
+    disk:
+      name: paladi-license-data
+      mountPath: /var/data
+      sizeGB: 1
