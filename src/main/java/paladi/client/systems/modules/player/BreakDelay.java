@@ -21,7 +21,7 @@ public class BreakDelay extends Module {
 
     private final Setting<Integer> cooldown = sgGeneral.add(new IntSetting.Builder()
         .name("cooldown")
-        .description("Block break cooldown in ticks.")
+        .description("Block break cooldown in ticks. Set to 4 or 5 for Grim AC bypass (Donut).")
         .defaultValue(0)
         .min(0)
         .sliderMax(5)

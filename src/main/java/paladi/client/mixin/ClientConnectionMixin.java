@@ -55,9 +55,11 @@ public abstract class ClientConnectionMixin {
 
     @Inject(method = "disconnect(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
     private void disconnect(Text disconnectReason, CallbackInfo ci) {
-        if (Modules.get().get(HighwayBuilder.class).isActive()) {
+        if (Modules.get() == null) return;
+        HighwayBuilder hb = Modules.get().get(HighwayBuilder.class);
+        if (hb != null && hb.isActive()) {
             MutableText text = Text.literal("%n%n%s[%sHighway Builder%s] Statistics:%n".formatted(Formatting.GRAY, Formatting.BLUE, Formatting.GRAY));
-            text.append(Modules.get().get(HighwayBuilder.class).getStatsText());
+            text.append(hb.getStatsText());
 
             ((MutableText) disconnectReason).append(text);
         }

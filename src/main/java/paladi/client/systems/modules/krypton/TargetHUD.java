@@ -42,37 +42,39 @@ public class TargetHUD extends Module {
         int y = (int) ((event.screenHeight / 2 + 10) / s);
 
         event.drawContext.getMatrices().pushMatrix();
-        event.drawContext.getMatrices().scale((float) s, (float) s);
+        try {
+            event.drawContext.getMatrices().scale((float) s, (float) s);
 
-        // Background
-        int width = 120;
-        int height = 45;
-        event.drawContext.fill(x, y, x + width, y + height, new Color(0, 0, 0, 150).getPacked());
+            // Background
+            int width = 120;
+            int height = 45;
+            event.drawContext.fill(x, y, x + width, y + height, new Color(0, 0, 0, 150).getPacked());
 
-        // Name
-        event.drawContext.drawTextWithShadow(mc.textRenderer, target.getName().getString(), x + 5, y + 5, Color.WHITE.getPacked());
+            // Name
+            event.drawContext.drawTextWithShadow(mc.textRenderer, target.getName().getString(), x + 5, y + 5, Color.WHITE.getPacked());
 
-        // Health Bar
-        float healthPercent = Math.max(0, Math.min(1, target.getHealth() / target.getMaxHealth()));
-        int barWidth = width - 10;
-        event.drawContext.fill(x + 5, y + 18, x + 5 + barWidth, y + 22, new Color(50, 50, 50, 255).getPacked());
-        event.drawContext.fill(x + 5, y + 18, x + 5 + (int) (barWidth * healthPercent), y + 22, new Color(0, 255, 100, 255).getPacked());
+            // Health Bar
+            float healthPercent = Math.max(0, Math.min(1, target.getHealth() / target.getMaxHealth()));
+            int barWidth = width - 10;
+            event.drawContext.fill(x + 5, y + 18, x + 5 + barWidth, y + 22, new Color(50, 50, 50, 255).getPacked());
+            event.drawContext.fill(x + 5, y + 18, x + 5 + (int) (barWidth * healthPercent), y + 22, new Color(0, 255, 100, 255).getPacked());
 
-        // Health Text
-        String healthText = String.format("%.1f HP", target.getHealth());
-        event.drawContext.drawTextWithShadow(mc.textRenderer, healthText, x + 5, y + 25, Color.WHITE.getPacked());
+            // Health Text
+            String healthText = String.format("%.1f HP", target.getHealth());
+            event.drawContext.drawTextWithShadow(mc.textRenderer, healthText, x + 5, y + 25, Color.WHITE.getPacked());
 
-        // Armor
-        int armorX = x + 60;
-        int armorY = y + 28;
-        EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-        for (int i = 0; i < slots.length; i++) {
-            ItemStack armor = target.getEquippedStack(slots[i]);
-            if (!armor.isEmpty()) {
-                event.drawContext.drawItem(armor, armorX + (i * 15), armorY);
+            // Armor
+            int armorX = x + 60;
+            int armorY = y + 28;
+            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+            for (int i = 0; i < slots.length; i++) {
+                ItemStack armor = target.getEquippedStack(slots[i]);
+                if (!armor.isEmpty()) {
+                    event.drawContext.drawItem(armor, armorX + (i * 15), armorY);
+                }
             }
+        } finally {
+            event.drawContext.getMatrices().popMatrix();
         }
-
-        event.drawContext.getMatrices().popMatrix();
     }
 }

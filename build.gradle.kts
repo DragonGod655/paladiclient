@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.guardsquare:proguard-gradle:7.5.0")
+    }
+}
+
 plugins {
     alias(libs.plugins.fabric.loom)
     id("maven-publish")
@@ -90,7 +99,7 @@ dependencies {
     modCompileOnly(libs.viafabricplus) { isTransitive = false }
     modCompileOnly(libs.viafabricplus.api) { isTransitive = false }
 
-    modCompileOnly(libs.baritone)
+    modInclude(libs.baritone)
     modCompileOnly(libs.modmenu)
 
     // Libraries (JAR-in-JAR)
@@ -116,9 +125,22 @@ sourceSets {
             srcDir("src/launcher/java")
         }
     }
+    main {
+        java {
+            val buildType = (project.findProperty("buildType") ?: "paladi").toString()
+            if (buildType == "autosell") {
+                include("autosell/**")
+            } else {
+                include("paladi/client/**")
+            }
+        }
+    }
 }
 
 java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 
@@ -164,20 +186,30 @@ loom {
 
 tasks {
     processResources {
+        filteringCharset = "UTF-8"
+        val buildType = (project.findProperty("buildType") ?: "paladi").toString()
+        val fabricModTemplate = if (buildType == "autosell") {
+            "src/main/resources/fabric.mod.json.autosell"
+        } else {
+            "src/main/resources/fabric.mod.json.paladi"
+        }
+
+        exclude("fabric.mod.json")
+
         val buildNumber = providers.gradleProperty("build_number").getOrElse("")
         val commit = providers.gradleProperty("commit").getOrElse("")
+        val minecraftVersion = libs.versions.minecraft.get()
+        val loaderVersion = libs.versions.fabric.loader.get()
 
-        val propertyMap = mapOf(
-            "version" to project.version,
-            "build_number" to buildNumber,
-            "commit" to commit,
-            "minecraft_version" to libs.versions.minecraft.get(),
-            "loader_version" to libs.versions.fabric.loader.get()
-        )
-
-        inputs.properties(propertyMap)
-        filesMatching("fabric.mod.json") {
-            expand(propertyMap)
+        from(fabricModTemplate) {
+            rename { "fabric.mod.json" }
+            filter { line ->
+                line.replace("\${version}", project.version.toString())
+                    .replace("\${build_number}", buildNumber)
+                    .replace("\${commit}", commit)
+                    .replace("\${minecraft_version}", minecraftVersion)
+                    .replace("\${loader_version}", loaderVersion)
+            }
         }
     }
 
@@ -204,6 +236,7 @@ tasks {
     }
 
     withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
         options.compilerArgs.addAll(
             listOf(
                 "-Xlint:deprecation",
@@ -237,6 +270,7 @@ publishing {
         }
     }
 
+
     repositories {
         maven("https://maven.meteordev.org/snapshots") {
             name = "meteor-maven"
@@ -252,3 +286,46 @@ publishing {
         }
     }
 }
+
+tasks.register<JavaExec>("runDecryptor") {
+    classpath = sourceSets["main"].runtimeClasspath +
+                configurations["minecraftNamedRuntime"] +
+                configurations["minecraftClientRuntimeLibraries"]
+    doFirst {
+        classpath.forEach { file ->
+            println("CP File: " + file.name)
+        }
+    }
+    mainClass.set("paladi.client.systems.modules.krypton.KryptonDecryptor")
+}
+
+tasks.register<proguard.gradle.ProGuardTask>("obfuscateJar") {
+    dependsOn("remapJar")
+
+    injars(layout.buildDirectory.file("libs/1.21.11-1.21.11-local.jar"))
+    outjars(layout.buildDirectory.file("libs/1.21.11-1.21.11-local-obf.jar"))
+
+    libraryjars(System.getProperty("java.home") + "/jmods")
+    sourceSets["main"].compileClasspath.forEach {
+        if (it.exists()) {
+            libraryjars(it)
+        }
+    }
+
+    dontwarn("**")
+    ignorewarnings()
+    dontoptimize()
+    dontshrink()
+    dontpreverify()
+
+    keep("public class paladi.client.PaladiClient { *; }")
+    keep("public class paladi.client.addons.** { *; }")
+    keep("public class paladi.client.mixin.** { *; }")
+    keep("public class !paladi.client.systems.modules.krypton.**,!paladi.client.systems.danhsachcam.**,paladi.client.** { *; }")
+
+    keepattributes("*Annotation*,Signature,InnerClasses,EnclosingMethod")
+}
+
+
+
+

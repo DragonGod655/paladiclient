@@ -80,6 +80,8 @@ public class NametagUtils {
         return true;
     }
 
+    private static DrawContext currentDrawContext = null;
+
     public static void begin(Vector3d pos) {
         Matrix4fStack matrices = RenderSystem.getModelViewStack();
         begin(matrices, pos);
@@ -87,12 +89,15 @@ public class NametagUtils {
 
     public static void begin(Vector3d pos, DrawContext drawContext) {
         begin(pos);
+        currentDrawContext = drawContext;
 
-        Matrix3x2fStack matrices = drawContext.getMatrices();
-        matrices.pushMatrix();
-        matrices.scale(1.0f / mc.getWindow().getScaleFactor());
-        matrices.translate((float) pos.x, (float) pos.y);
-        matrices.scale((float) scale, (float) scale);
+        if (drawContext != null) {
+            Matrix3x2fStack matrices = drawContext.getMatrices();
+            matrices.pushMatrix();
+            matrices.scale(1.0f / mc.getWindow().getScaleFactor());
+            matrices.translate((float) pos.x, (float) pos.y);
+            matrices.scale((float) scale, (float) scale);
+        }
     }
 
     private static void begin(Matrix4fStack matrices, Vector3d pos) {
@@ -103,11 +108,14 @@ public class NametagUtils {
 
     public static void end() {
         RenderSystem.getModelViewStack().popMatrix();
+        if (currentDrawContext != null) {
+            currentDrawContext.getMatrices().popMatrix();
+            currentDrawContext = null;
+        }
     }
 
     public static void end(DrawContext drawContext) {
         end();
-        drawContext.getMatrices().popMatrix();
     }
 
     private static double getScale(Vector3d pos) {

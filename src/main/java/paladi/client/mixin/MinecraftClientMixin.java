@@ -127,9 +127,10 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
         if (PaladiClient.EVENT_BUS.post(DoAttackEvent.get()).isCancelled()) cir.cancel();
     }
 
-    @Inject(method = "doItemUse", at = @At("HEAD"))
-    private void onDoItemUse(CallbackInfo info) {
+    @Inject(method = "doItemUse", at = @At("HEAD"), cancellable = true)
+    private void onDoItemUseBeforeHands(CallbackInfo ci) {
         doItemUseCalled = true;
+        if (PaladiClient.EVENT_BUS.post(DoItemUseEvent.get()).isCancelled()) ci.cancel();
     }
 
     @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;ZZ)V", at = @At("HEAD"))
@@ -184,10 +185,7 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
         }
     }
 
-    @Inject(method = "doItemUse", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Hand;values()[Lnet/minecraft/util/Hand;"), cancellable = true)
-    private void onDoItemUseBeforeHands(CallbackInfo ci) {
-        if (PaladiClient.EVENT_BUS.post(DoItemUseEvent.get()).isCancelled()) ci.cancel();
-    }
+
 
     @ModifyExpressionValue(method = "doItemUse", at = @At(value = "FIELD", target = "Lnet/minecraft/client/MinecraftClient;crosshairTarget:Lnet/minecraft/util/hit/HitResult;", ordinal = 1))
     private HitResult doItemUseMinecraftClientCrosshairTargetProxy(HitResult original) {
@@ -222,8 +220,9 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
 
     @Unique
     private boolean HB$stopUsingItem() {
+        if (Modules.get() == null) return true;
         HighwayBuilder b = Modules.get().get(HighwayBuilder.class);
-        return !b.isActive() || !b.drawingBow;
+        return b == null || !b.isActive() || !b.drawingBow;
     }
 
     @Inject(method = "onResolutionChanged", at = @At("TAIL"))
@@ -313,6 +312,11 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
     @Override
     public void Paladi$rightClick() {
         rightClick = true;
+    }
+
+    @Override
+    public void Paladi$setItemUseCooldown(int cooldown) {
+        this.itemUseCooldown = cooldown;
     }
 
     @Override

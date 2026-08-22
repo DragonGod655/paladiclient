@@ -9,8 +9,13 @@ import paladi.client.systems.modules.combat.*;
 import paladi.client.systems.modules.misc.*;
 import paladi.client.events.game.GameJoinedEvent;
 import paladi.client.events.game.GameLeftEvent;
+import paladi.client.events.Paladi.KeyEvent;
+import paladi.client.events.Paladi.MouseClickEvent;
+import paladi.client.utils.misc.input.KeyAction;
 import paladi.client.PaladiClient;
 import meteordevelopment.orbit.EventHandler;
+
+import static paladi.client.PaladiClient.mc;
 import paladi.client.systems.modules.movement.*;
 import paladi.client.systems.modules.player.*;
 import paladi.client.systems.modules.render.*;
@@ -45,6 +50,7 @@ public class Modules extends System<Modules> {
         groups.clear();
         initCombat();
         initMisc();
+        initWorld();
         initDonut();
         initBaseFinding();
         initRender();
@@ -57,6 +63,7 @@ public class Modules extends System<Modules> {
         addInternal(new KillAura());
         addInternal(new AutoArmor());
         addInternal(new AutoTotem());
+        addInternal(new KryptonAutoTotem());
         addInternal(new AnchorAura());
         addInternal(new AntiAnchor());
         addInternal(new AntiAnvil());
@@ -108,6 +115,7 @@ public class Modules extends System<Modules> {
         addInternal(new ShaftFinder());
         addInternal(new KryptonAutoShift());
         addInternal(new KryptonAutoBuy());
+        addInternal(new AutoOrderCollect());
 
         // Movement
         addInternal(new AirJump());
@@ -232,11 +240,13 @@ public class Modules extends System<Modules> {
         addInternal(new Collisions());
         addInternal(new EChestFarmer());
         addInternal(new EndermanLook());
-        addInternal(new Excavator());
         addInternal(new Flamethrower());
-        addInternal(new HighwayBuilder());
-        addInternal(new InfinityMiner());
-        addInternal(new LiquidFiller());
+        if (paladi.client.pathing.BaritoneUtils.IS_AVAILABLE) {
+            addInternal(new Excavator());
+            addInternal(new HighwayBuilder());
+            addInternal(new InfinityMiner());
+            addInternal(new LiquidFiller());
+        }
         addInternal(new MountBypass());
         addInternal(new NoGhostBlocks());
         addInternal(new Nuker());
@@ -245,6 +255,9 @@ public class Modules extends System<Modules> {
         addInternal(new StashFinder());
         addInternal(new paladi.client.systems.modules.world.Timer());
         addInternal(new VeinMiner());
+        addInternal(new EasyPlacePlus());
+        addInternal(new LitematicaLayerHUD());
+        addInternal(new StraightLitematicaMiner());
     }
 
     private void addInternal(Module module) {
@@ -266,6 +279,7 @@ public class Modules extends System<Modules> {
         add(new AutoInvTotem());
         add(new AutoJumpReset());
         add(new AutoTotem());
+        add(new KryptonAutoTotem());
         add(new CrystalOptimizer());
         add(new DoubleAnchor());
         add(new ElytraSwap());
@@ -303,6 +317,8 @@ public class Modules extends System<Modules> {
         add(new ChibiDebugger());
         add(new ShaftFinder());
         add(new KryptonAutoShift());
+        add(new EasyPlacePlus());
+        add(new LitematicaLayerHUD());
     }
 
     private void initDonut() {
@@ -310,6 +326,8 @@ public class Modules extends System<Modules> {
         add(new AuctionSniper());
         add(new AutoSell());
         add(new AutoSpawnerSell());
+        add(new AutoSpawnerSelect());
+        add(new AutoAxeSell());
         add(new ItemDropper());
         add(new NetheriteFinder());
         add(new RTPBaseFinder());
@@ -320,6 +338,7 @@ public class Modules extends System<Modules> {
         add(new ChunkFinder());
         add(new SusChunkFinder());
         add(new KryptonAutoBuy());
+        add(new AutoOrderCollect());
     }
 
     private void initBaseFinding() {
@@ -338,8 +357,6 @@ public class Modules extends System<Modules> {
         add(new JumpCircles());
         add(new HUD());
         add(new ESP());
-        add(new StorageESP());
-        add(new KryptonStorageESP());
         add(new Tracers());
         add(new TargetHUD());
         add(new RealHitbox());
@@ -352,6 +369,39 @@ public class Modules extends System<Modules> {
         add(new Radio());
         add(new Friends());
         add(new DiscordPresence());
+    }
+
+    private void initWorld() {
+        add(new Ambience());
+        add(new AutoBreed());
+        add(new AutoBrewer());
+        add(new AutoMount());
+        add(new AutoNametag());
+        add(new AutoShearer());
+        add(new AutoSign());
+        add(new AutoSmelter());
+        add(new BuildHeight());
+        add(new Collisions());
+        add(new EChestFarmer());
+        add(new EndermanLook());
+        add(new Flamethrower());
+        if (paladi.client.pathing.BaritoneUtils.IS_AVAILABLE) {
+            add(new Excavator());
+            add(new HighwayBuilder());
+            add(new InfinityMiner());
+            add(new LiquidFiller());
+        }
+        add(new MountBypass());
+        add(new NoGhostBlocks());
+        add(new Nuker());
+        add(new PacketMine());
+        add(new SpawnProofer());
+        add(new StashFinder());
+        add(new paladi.client.systems.modules.world.Timer());
+        add(new VeinMiner());
+        add(new EasyPlacePlus());
+        add(new LitematicaLayerHUD());
+        add(new StraightLitematicaMiner());
     }
 
     @EventHandler
@@ -370,6 +420,40 @@ public class Modules extends System<Modules> {
             if (!module.runInMainMenu) {
                 if (module.autoSubscribe) PaladiClient.EVENT_BUS.unsubscribe(module);
                 module.onDeactivate();
+            }
+        }
+    }
+
+    @EventHandler
+    private void onKey(KeyEvent event) {
+        if (mc.currentScreen != null) return;
+
+        for (Module module : getAll()) {
+            if (event.action == KeyAction.Press && module.keybind.matches(event.input)) {
+                module.toggle();
+                module.sendToggledMsg();
+            } else if (event.action == KeyAction.Release && module.toggleOnBindRelease && module.keybind.matches(event.input)) {
+                if (module.isActive()) {
+                    module.toggle();
+                    module.sendToggledMsg();
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    private void onMouseClick(MouseClickEvent event) {
+        if (mc.currentScreen != null) return;
+
+        for (Module module : getAll()) {
+            if (event.action == KeyAction.Press && module.keybind.matches(event.input)) {
+                module.toggle();
+                module.sendToggledMsg();
+            } else if (event.action == KeyAction.Release && module.toggleOnBindRelease && module.keybind.matches(event.input)) {
+                if (module.isActive()) {
+                    module.toggle();
+                    module.sendToggledMsg();
+                }
             }
         }
     }
@@ -413,8 +497,11 @@ public class Modules extends System<Modules> {
 
     public List<Pair<Module, String>> searchTitles(String text) {
         List<Pair<Module, String>> results = new ArrayList<>();
+        String query = text.toLowerCase();
         for (Module m : getAll()) {
-            if (m.title.toLowerCase().contains(text.toLowerCase())) {
+            if (m.title.toLowerCase().contains(query)
+                || m.name.toLowerCase().contains(query)
+                || (m.description != null && m.description.toLowerCase().contains(query))) {
                 results.add(new Pair<>(m, m.title));
             }
         }

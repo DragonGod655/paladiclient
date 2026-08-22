@@ -10,5 +10,7 @@ import net.minecraft.client.gl.Framebuffer;
 public interface IMinecraftClient {
     void Paladi$rightClick();
 
+    void Paladi$setItemUseCooldown(int cooldown);
+
     void Paladi$setFramebuffer(Framebuffer framebuffer);
 }

@@ -141,6 +141,7 @@
     "MouseMixin",
     "MultiplayerScreenMixin",
     "MutableTextMixin",
+    "NarratorManagerMixin",
     "PacketBundlingMixin",
     "PacketByteBufMixin",
     "ParticleManagerMixin",

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "autosell.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "MinecraftClientMixin",
+    "ClientPlayNetworkHandlerMixin",
+    "ChatHudMixin",
+    "InGameHudMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -274,7 +274,11 @@ public class CamouflageChunkFinder extends Module {
     // ===================== RENDERING =====================
     @EventHandler
     private void onRender(Render3DEvent event) {
-        if (susChunks.isEmpty()) return;
+        if (susChunks.isEmpty() || mc.player == null) return;
+
+        double playerY = mc.player.getY();
+        double boxBottom = Math.max(mc.world.getBottomY(), playerY - 3);
+        double boxTop = Math.min(319, playerY + 4);
 
         for (Map.Entry<ChunkPos, ChunkSusData> entry : susChunks.entrySet()) {
             ChunkPos pos  = entry.getKey();
@@ -283,23 +287,36 @@ public class CamouflageChunkFinder extends Module {
             double sx = pos.getStartX(), sz = pos.getStartZ();
             double ex = pos.getEndX() + 1, ez = pos.getEndZ() + 1;
 
-            // Vẽ mặt phẳng 16x16 (Sus Chunk Style)
-            double renderY = 80; // Độ cao mặc định để dễ nhìn
-            
-            // Chunk cực kỳ đáng ngờ -> viền đỏ, còn lại -> cam
             Color lc = d.score > 50 ? highSusColor.get() : lineColor.get();
             Color fc = fillColor.get().copy().a(d.score > 50 ? 60 : 40);
 
-            event.renderer.box(sx, renderY, sz, ex, renderY + 0.1, ez, fc, lc, ShapeMode.Both, 0);
+            event.renderer.box(sx, boxBottom, sz, ex, boxTop, ez, fc, lc, ShapeMode.Both, 0);
+        }
+    }
 
-            // Hiển thị lý do nghi ngờ (Sử dụng NametagUtils)
-            String label = "Score:" + d.score + " | " + formatReasons(d.reasons);
-            
-            NametagUtils.begin(new Vector3d(sx + 8, renderY + 0.5, sz + 8));
-            TextRenderer.get().begin();
-            TextRenderer.get().render(label, -TextRenderer.get().getWidth(label) / 2, 0, lc, true);
-            TextRenderer.get().end();
-            NametagUtils.end();
+    @EventHandler
+    private void onRender2D(paladi.client.events.render.Render2DEvent event) {
+        if (susChunks.isEmpty() || mc.player == null) return;
+
+        double playerY = mc.player.getY();
+        TextRenderer text = TextRenderer.get();
+
+        for (Map.Entry<ChunkPos, ChunkSusData> entry : susChunks.entrySet()) {
+            ChunkPos pos  = entry.getKey();
+            ChunkSusData d = entry.getValue();
+
+            double sx = pos.getStartX(), sz = pos.getStartZ();
+            Color lc = d.score > 50 ? highSusColor.get() : lineColor.get();
+
+            Vector3d pos3d = new Vector3d(sx + 8, playerY + 1.5, sz + 8);
+            if (NametagUtils.to2D(pos3d, 1.0)) {
+                String label = "XYZ: " + (int)(sx + 8) + ", " + (int)playerY + ", " + (int)(sz + 8) + " | Score: " + d.score + " | " + formatReasons(d.reasons);
+                NametagUtils.begin(pos3d, event.drawContext);
+                text.begin();
+                text.render(label, -text.getWidth(label) / 2.0, 0, lc, true);
+                text.end();
+                NametagUtils.end();
+            }
         }
     }
 

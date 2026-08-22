@@ -44,7 +44,7 @@ public class ChunkFinder extends Module {
     private final Setting<SettingColor> color = sgGeneral.add(new ColorSetting.Builder()
         .name("base-chunk-color")
         .description("Color for old/saved chunks (Likely Base).")
-        .defaultValue(new SettingColor(25, 225, 25, 150))
+        .defaultValue(new SettingColor(255, 30, 30, 160))
         .build()
     );
 

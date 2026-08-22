@@ -49,7 +49,7 @@ public class ESPGroup {
         sumY -= block.y;
         sumZ -= block.z;
 
-        if (blocks.isEmpty()) blockEsp.removeGroup(block.group);
+        if (blocks.isEmpty()) blockEsp.removeGroup(this);
         else if (splitGroup) {
             trySplit(block);
         }
@@ -139,6 +139,8 @@ public class ESPGroup {
     }
 
     public void render(Render3DEvent event) {
+        if (blocks.isEmpty()) return;
+
         ESPBlockData blockData = blockEsp.getBlockData(block);
 
         if (blockData.tracer) {

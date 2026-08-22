@@ -155,6 +155,8 @@ public class Blur extends Module {
     }
 
     private void onRenderAfterWorld() {
+        if (mc.world == null) return;
+
         // Enable / disable with fading
         boolean shouldRender = shouldRender();
         long time = System.currentTimeMillis();

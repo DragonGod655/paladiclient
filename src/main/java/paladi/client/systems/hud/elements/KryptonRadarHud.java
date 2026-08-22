@@ -93,7 +93,7 @@ public class KryptonRadarHud extends HudElement {
         }
 
         // Coordinates
-        String coords = current.x + ", " + current.z;
+        String coords = (int) mc.player.getX() + ", " + (int) mc.player.getY() + ", " + (int) mc.player.getZ();
         renderer.text(coords, rx + rw - renderer.textWidth(coords, false, 0.6) - 5, ry + rh - 15, CYAN, false, 0.6);
     }
 }

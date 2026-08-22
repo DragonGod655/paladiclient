@@ -135,7 +135,12 @@ public class MiddleClickExtra extends Module {
 
         selectedSlot = mc.player.getInventory().getSelectedSlot();
         itemSlot = result.slot();
-        wasHeld = result.isMainHand();
+        wasHeld = result.isMainHand() || result.isOffhand();
+
+        if (result.isOffhand()) {
+            mc.interactionManager.interactItem(mc.player, Hand.OFF_HAND);
+            return;
+        }
 
         if (!wasHeld) {
             if (!quickSwap.get()) InvUtils.swap(result.slot(), swapBack.get());
@@ -144,15 +149,24 @@ public class MiddleClickExtra extends Module {
 
         if (mode.get().immediate) {
             mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-            swapBack(false);
+            if (swapBack.get() && !wasHeld) {
+                pendingSwapBack = true;
+            }
         } else {
             mc.options.useKey.setPressed(true);
             isUsing = true;
         }
     }
 
+    private boolean pendingSwapBack = false;
+
     @EventHandler
     private void onTick(TickEvent.Pre event) {
+        if (pendingSwapBack) {
+            swapBack(false);
+            pendingSwapBack = false;
+        }
+
         if (!isUsing) return;
         boolean pressed = true;
 

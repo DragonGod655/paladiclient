@@ -42,6 +42,7 @@ public class StorageBlockListSetting extends Setting<List<BlockEntityType<?>>> {
         BlockEntityType.ENDER_CHEST,
         BlockEntityType.FURNACE,
         BlockEntityType.HOPPER,
+        BlockEntityType.MOB_SPAWNER,
         BlockEntityType.SHULKER_BOX,
         BlockEntityType.SMOKER,
         BlockEntityType.TRAPPED_CHEST,
@@ -71,6 +72,10 @@ public class StorageBlockListSetting extends Setting<List<BlockEntityType<?>>> {
         } catch (Exception ignored) {
         }
 
+        if (blocks.isEmpty()) {
+            blocks.addAll(Arrays.asList(STORAGE_BLOCKS));
+        }
+
         return blocks;
     }
 
@@ -98,12 +103,21 @@ public class StorageBlockListSetting extends Setting<List<BlockEntityType<?>>> {
 
     @Override
     public List<BlockEntityType<?>> load(NbtCompound tag) {
+        if (!tag.contains("value")) {
+            resetImpl();
+            return get();
+        }
+
         get().clear();
 
         NbtList valueTag = tag.getListOrEmpty("value");
         for (NbtElement tagI : valueTag) {
             BlockEntityType<?> type = Registries.BLOCK_ENTITY_TYPE.get(Identifier.of(tagI.asString().orElse("")));
             if (type != null) get().add(type);
+        }
+
+        if (get().isEmpty()) {
+            resetImpl();
         }
 
         return get();

@@ -172,7 +172,7 @@ public class StashFinder extends Module {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private final Map<ChunkPos, Vec3d> tracerPositions = new HashMap<>();
-    public List<Chunk> chunks = new ArrayList<>();
+    public List<Chunk> chunks = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public StashFinder() {
         super(Categories.BASEFINDING, "stash-finder", "Searches loaded chunks for storage blocks. Saves to <your minecraft folder>/paladi-client");
@@ -368,30 +368,51 @@ public class StashFinder extends Module {
         }
     }
 
+    private boolean saveScheduled = false;
+
     private void saveCsv() {
-        try {
-            File file = getCsvFile();
-            file.getParentFile().mkdirs();
-            Writer writer = new FileWriter(file);
-
-            writer.write("X,Z,Chests,Barrels,Shulkers,EnderChests,Furnaces,DispensersDroppers,Hoppers\n");
-            for (Chunk chunk : chunks) chunk.write(writer);
-
-            writer.close();
-        } catch (IOException e) {
-            PaladiClient.LOG.error("Error while writing the stash list to csv", e);
-        }
+        saveAsync();
     }
 
     private void saveJson() {
+        saveAsync();
+    }
+
+    private synchronized void saveAsync() {
+        if (saveScheduled) return;
+        saveScheduled = true;
+        paladi.client.utils.network.PaladiExecutor.execute(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ignored) {}
+            saveScheduled = false;
+            saveJsonInternal();
+            saveCsvInternal();
+        });
+    }
+
+    private void saveJsonInternal() {
         try {
             File file = getJsonFile();
             file.getParentFile().mkdirs();
-            Writer writer = new FileWriter(file);
-            GSON.toJson(chunks, writer);
-            writer.close();
+            try (Writer writer = new FileWriter(file)) {
+                GSON.toJson(new ArrayList<>(chunks), writer);
+            }
         } catch (IOException e) {
             PaladiClient.LOG.error("Error while writing the stash list to json", e);
+        }
+    }
+
+    private void saveCsvInternal() {
+        try {
+            File file = getCsvFile();
+            file.getParentFile().mkdirs();
+            try (Writer writer = new FileWriter(file)) {
+                writer.write("X,Z,Chests,Barrels,Shulkers,EnderChests,Furnaces,DispensersDroppers,Hoppers\n");
+                for (Chunk chunk : new ArrayList<>(chunks)) chunk.write(writer);
+            }
+        } catch (IOException e) {
+            PaladiClient.LOG.error("Error while writing the stash list to csv", e);
         }
     }
 

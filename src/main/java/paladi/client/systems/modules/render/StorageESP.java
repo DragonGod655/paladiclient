@@ -5,12 +5,15 @@
 
 package paladi.client.systems.modules.render;
 
+import meteordevelopment.orbit.EventHandler;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.ChestBlock;
+import net.minecraft.block.entity.*;
+import net.minecraft.block.enums.ChestType;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import paladi.client.events.entity.player.InteractBlockEvent;
 import paladi.client.events.render.Render3DEvent;
-import paladi.client.gui.GuiTheme;
-import paladi.client.gui.widgets.WWidget;
-import paladi.client.gui.widgets.containers.WVerticalList;
-import paladi.client.gui.widgets.pressable.WButton;
 import paladi.client.renderer.MeshBuilder;
 import paladi.client.renderer.MeshRenderer;
 import paladi.client.renderer.PaladiRenderPipelines;
@@ -25,31 +28,29 @@ import paladi.client.utils.render.RenderUtils;
 import paladi.client.utils.render.SimpleBlockRenderer;
 import paladi.client.utils.render.color.Color;
 import paladi.client.utils.render.color.SettingColor;
-import paladi.client.utils.render.postprocess.PostProcessShader;
 import paladi.client.utils.render.postprocess.PostProcessShaders;
 import paladi.client.utils.world.Dir;
-import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.block.entity.*;
-import net.minecraft.block.enums.ChestType;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class StorageESP extends Module {
+    public enum Mode {
+        Box,
+        Shader
+    }
+
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final SettingGroup sgColors = settings.createGroup("Colors");
     private final SettingGroup sgOpened = settings.createGroup("Opened Rendering");
-    private final Set<BlockPos> interactedBlocks = new HashSet<>();
+
+    // General
 
     private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
         .name("mode")
         .description("Rendering mode.")
-        .defaultValue(Mode.Shader)
+        .defaultValue(Mode.Box)
         .build()
     );
 
@@ -60,6 +61,45 @@ public class StorageESP extends Module {
         .build()
     );
 
+    public final Setting<ShapeMode> shapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
+        .name("shape-mode")
+        .description("How the shapes are rendered.")
+        .defaultValue(ShapeMode.Both)
+        .visible(() -> mode.get() == Mode.Box)
+        .build()
+    );
+
+    public final Setting<Integer> fillOpacity = sgGeneral.add(new IntSetting.Builder()
+        .name("fill-opacity")
+        .description("The opacity of the shape fill.")
+        .defaultValue(50)
+        .range(0, 255)
+        .sliderMax(255)
+        .visible(() -> mode.get() == Mode.Box && shapeMode.get() != ShapeMode.Lines)
+        .build()
+    );
+
+    public final Setting<Integer> outlineWidth = sgGeneral.add(new IntSetting.Builder()
+        .name("width")
+        .description("The width of the shader outline.")
+        .defaultValue(1)
+        .range(1, 10)
+        .sliderRange(1, 5)
+        .visible(() -> mode.get() == Mode.Shader)
+        .build()
+    );
+
+    public final Setting<Double> glowMultiplier = sgGeneral.add(new DoubleSetting.Builder()
+        .name("glow-multiplier")
+        .description("Multiplier for glow effect.")
+        .defaultValue(3.5)
+        .min(0)
+        .sliderMax(10)
+        .decimalPlaces(3)
+        .visible(() -> mode.get() == Mode.Shader)
+        .build()
+    );
+
     private final Setting<Boolean> tracers = sgGeneral.add(new BoolSetting.Builder()
         .name("tracers")
         .description("Draws tracers to storage blocks.")
@@ -67,94 +107,81 @@ public class StorageESP extends Module {
         .build()
     );
 
-    public final Setting<ShapeMode> shapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
-        .name("shape-mode")
-        .description("How the shapes are rendered.")
-        .defaultValue(ShapeMode.Both)
-        .build()
-    );
-
-    public final Setting<Integer> fillOpacity = sgGeneral.add(new IntSetting.Builder()
-        .name("fill-opacity")
-        .description("The opacity of the shape fill.")
-        .visible(() -> shapeMode.get() != ShapeMode.Lines)
-        .defaultValue(50)
-        .range(0, 255)
-        .sliderMax(255)
-        .build()
-    );
-
-    public final Setting<Integer> outlineWidth = sgGeneral.add(new IntSetting.Builder()
-        .name("width")
-        .description("The width of the shader outline.")
-        .visible(() -> mode.get() == Mode.Shader)
-        .defaultValue(1)
-        .range(1, 10)
-        .sliderRange(1, 5)
-        .build()
-    );
-
-    public final Setting<Double> glowMultiplier = sgGeneral.add(new DoubleSetting.Builder()
-        .name("glow-multiplier")
-        .description("Multiplier for glow effect")
-        .visible(() -> mode.get() == Mode.Shader)
-        .decimalPlaces(3)
-        .defaultValue(3.5)
+    private final Setting<Integer> fadeDistance = sgGeneral.add(new IntSetting.Builder()
+        .name("fade-distance")
+        .description("The distance at which the color will fade.")
+        .defaultValue(0)
         .min(0)
-        .sliderMax(10)
+        .sliderMax(100)
         .build()
     );
 
-    private final Setting<SettingColor> chest = sgGeneral.add(new ColorSetting.Builder()
-        .name("chest")
-        .description("The color of chests.")
-        .defaultValue(new SettingColor(255, 160, 0, 255))
-        .build()
-    );
+    // Colors
 
-    private final Setting<SettingColor> trappedChest = sgGeneral.add(new ColorSetting.Builder()
-        .name("trapped-chest")
-        .description("The color of trapped chests.")
-        .defaultValue(new SettingColor(255, 0, 0, 255))
-        .build()
-    );
-
-    private final Setting<SettingColor> barrel = sgGeneral.add(new ColorSetting.Builder()
-        .name("barrel")
-        .description("The color of barrels.")
-        .defaultValue(new SettingColor(255, 160, 0, 255))
-        .build()
-    );
-
-    private final Setting<SettingColor> shulker = sgGeneral.add(new ColorSetting.Builder()
+    private final Setting<SettingColor> shulker = sgColors.add(new ColorSetting.Builder()
         .name("shulker")
         .description("The color of Shulker Boxes.")
+        .defaultValue(new SettingColor(255, 30, 80, 255))
+        .build()
+    );
+
+    private final Setting<SettingColor> enderChest = sgColors.add(new ColorSetting.Builder()
+        .name("ender-chest")
+        .description("The color of Ender Chests.")
+        .defaultValue(new SettingColor(170, 0, 255, 255))
+        .build()
+    );
+
+    private final Setting<SettingColor> chest = sgColors.add(new ColorSetting.Builder()
+        .name("chest")
+        .description("The color of normal chests.")
         .defaultValue(new SettingColor(255, 160, 0, 255))
         .build()
     );
 
-    private final Setting<SettingColor> enderChest = sgGeneral.add(new ColorSetting.Builder()
-        .name("ender-chest")
-        .description("The color of Ender Chests.")
-        .defaultValue(new SettingColor(120, 0, 255, 255))
+    private final Setting<SettingColor> trappedChest = sgColors.add(new ColorSetting.Builder()
+        .name("trapped-chest")
+        .description("The color of trapped chests.")
+        .defaultValue(new SettingColor(255, 50, 0, 255))
         .build()
     );
 
-    private final Setting<SettingColor> other = sgGeneral.add(new ColorSetting.Builder()
-        .name("other")
-        .description("The color of furnaces, dispensers, droppers and hoppers.")
+    private final Setting<SettingColor> barrel = sgColors.add(new ColorSetting.Builder()
+        .name("barrel")
+        .description("The color of barrels.")
+        .defaultValue(new SettingColor(230, 140, 40, 255))
+        .build()
+    );
+
+    private final Setting<SettingColor> spawner = sgColors.add(new ColorSetting.Builder()
+        .name("spawner")
+        .description("The color of mob spawners.")
+        .defaultValue(new SettingColor(255, 0, 50, 255))
+        .build()
+    );
+
+    private final Setting<SettingColor> furnace = sgColors.add(new ColorSetting.Builder()
+        .name("furnace")
+        .description("The color of furnaces, smokers and blast furnaces.")
         .defaultValue(new SettingColor(140, 140, 140, 255))
         .build()
     );
 
-    private final Setting<Double> fadeDistance = sgGeneral.add(new DoubleSetting.Builder()
-        .name("fade-distance")
-        .description("The distance at which the color will fade.")
-        .defaultValue(6)
-        .min(0)
-        .sliderMax(12)
+    private final Setting<SettingColor> hopper = sgColors.add(new ColorSetting.Builder()
+        .name("hopper")
+        .description("The color of hoppers, dispensers and droppers.")
+        .defaultValue(new SettingColor(0, 200, 255, 255))
         .build()
     );
+
+    private final Setting<SettingColor> other = sgColors.add(new ColorSetting.Builder()
+        .name("other")
+        .description("The color of crafters, brewing stands, pots, bookshelves and campfires.")
+        .defaultValue(new SettingColor(0, 255, 150, 255))
+        .build()
+    );
+
+    // Opened
 
     private final Setting<Boolean> hideOpened = sgOpened.add(new BoolSetting.Builder()
         .name("hide-opened")
@@ -165,14 +192,14 @@ public class StorageESP extends Module {
 
     private final Setting<SettingColor> openedColor = sgOpened.add(new ColorSetting.Builder()
         .name("opened-color")
-        .description("Optional setting to change colors of opened chests, as opposed to not rendering. Disabled at zero opacity.")
-        .defaultValue(new SettingColor(203, 90, 203, 0)) // TRANSPARENT BY DEFAULT.
+        .description("Optional setting to change colors of opened chests.")
+        .defaultValue(new SettingColor(203, 90, 203, 0))
         .build()
     );
 
-
-    private final Color lineColor = new Color(0, 0, 0, 0);
-    private final Color sideColor = new Color(0, 0, 0, 0);
+    private final Set<BlockPos> interactedBlocks = new HashSet<>();
+    private final Color lineColor = new Color(0, 0, 0, 255);
+    private final Color sideColor = new Color(0, 0, 0, 50);
     private boolean render;
     private int count;
 
@@ -180,48 +207,21 @@ public class StorageESP extends Module {
     private final MeshBuilderVertexConsumerProvider vertexConsumerProvider;
 
     public StorageESP() {
-        super(Categories.Render, "storage-esp", "Renders all specified storage blocks.");
-
+        super(Categories.Render, "storage-esp", "Renders all storage blocks through walls.");
         mesh = new MeshBuilder(PaladiRenderPipelines.WORLD_COLORED);
         vertexConsumerProvider = new MeshBuilderVertexConsumerProvider(mesh);
     }
 
-    private void getBlockEntityColor(BlockEntity blockEntity) {
-        render = false;
-
-        if (!storageBlocks.get().contains(blockEntity.getType())) return;
-
-        if (blockEntity instanceof TrappedChestBlockEntity) lineColor.set(trappedChest.get()); // Must come before ChestBlockEntity as it is the superclass of TrappedChestBlockEntity
-        else if (blockEntity instanceof ChestBlockEntity) lineColor.set(chest.get());
-        else if (blockEntity instanceof BarrelBlockEntity) lineColor.set(barrel.get());
-        else if (blockEntity instanceof ShulkerBoxBlockEntity) lineColor.set(shulker.get());
-        else if (blockEntity instanceof EnderChestBlockEntity) lineColor.set(enderChest.get());
-        else if (blockEntity instanceof AbstractFurnaceBlockEntity || blockEntity instanceof BrewingStandBlockEntity || blockEntity instanceof ChiseledBookshelfBlockEntity || blockEntity instanceof CrafterBlockEntity || blockEntity instanceof DispenserBlockEntity || blockEntity instanceof DecoratedPotBlockEntity || blockEntity instanceof HopperBlockEntity) lineColor.set(other.get());
-        else return;
-
-        render = true;
-
-        if (shapeMode.get() == ShapeMode.Sides || shapeMode.get() == ShapeMode.Both) {
-            sideColor.set(lineColor);
-            sideColor.a = fillOpacity.get();
-        }
-    }
-
     @Override
-    public WWidget getWidget(GuiTheme theme) {
-        WVerticalList list = theme.verticalList();
-
-        // Button to Clear Interacted Blocks
-        WButton clear = list.add(theme.button("Clear Rendering Cache")).expandX().widget();
-
-        clear.action = interactedBlocks::clear;
-
-        return list;
+    public void onDeactivate() {
+        interactedBlocks.clear();
     }
 
     @EventHandler
     private void onBlockInteract(InteractBlockEvent event) {
+        if (event.result == null) return;
         BlockPos pos = event.result.getBlockPos();
+        if (mc.world == null) return;
         BlockEntity blockEntity = mc.world.getBlockEntity(pos);
 
         if (blockEntity == null) return;
@@ -229,64 +229,90 @@ public class StorageESP extends Module {
         interactedBlocks.add(pos);
         if (blockEntity instanceof ChestBlockEntity chestBlockEntity) {
             BlockState state = chestBlockEntity.getCachedState();
-            ChestType chestType = state.get(ChestBlock.CHEST_TYPE);
+            if (state.contains(ChestBlock.CHEST_TYPE)) {
+                ChestType chestType = state.get(ChestBlock.CHEST_TYPE);
 
-            if (chestType == ChestType.LEFT || chestType == ChestType.RIGHT) {
-                // It's part of a double chest
-                Direction facing = state.get(ChestBlock.FACING);
-                BlockPos otherPartPos = pos.offset(chestType == ChestType.LEFT ? facing.rotateYClockwise() : facing.rotateYCounterclockwise());
-
-                interactedBlocks.add(otherPartPos);
+                if (chestType == ChestType.LEFT || chestType == ChestType.RIGHT) {
+                    Direction facing = state.get(ChestBlock.FACING);
+                    BlockPos otherPartPos = pos.offset(chestType == ChestType.LEFT ? facing.rotateYClockwise() : facing.rotateYCounterclockwise());
+                    interactedBlocks.add(otherPartPos);
+                }
             }
         }
+    }
+
+    private void getBlockEntityColor(BlockEntity blockEntity) {
+        render = false;
+        if (blockEntity == null) return;
+        if (!storageBlocks.get().contains(blockEntity.getType())) return;
+
+        if (blockEntity instanceof ShulkerBoxBlockEntity) lineColor.set(shulker.get());
+        else if (blockEntity instanceof EnderChestBlockEntity) lineColor.set(enderChest.get());
+        else if (blockEntity instanceof TrappedChestBlockEntity) lineColor.set(trappedChest.get());
+        else if (blockEntity instanceof ChestBlockEntity) lineColor.set(chest.get());
+        else if (blockEntity instanceof BarrelBlockEntity) lineColor.set(barrel.get());
+        else if (blockEntity instanceof MobSpawnerBlockEntity) lineColor.set(spawner.get());
+        else if (blockEntity instanceof AbstractFurnaceBlockEntity) lineColor.set(furnace.get());
+        else if (blockEntity instanceof HopperBlockEntity || blockEntity instanceof DispenserBlockEntity || blockEntity instanceof DropperBlockEntity) lineColor.set(hopper.get());
+        else if (blockEntity instanceof BrewingStandBlockEntity || blockEntity instanceof ChiseledBookshelfBlockEntity || blockEntity instanceof CrafterBlockEntity || blockEntity instanceof DecoratedPotBlockEntity || blockEntity instanceof CampfireBlockEntity) lineColor.set(other.get());
+        else return;
+
+        render = true;
+        sideColor.set(lineColor);
+        sideColor.a = fillOpacity.get();
     }
 
     @EventHandler
     private void onRender(Render3DEvent event) {
         count = 0;
 
-        for (BlockEntity blockEntity : Utils.blockEntities()) {
-            // Check if the block has been interacted with (opened)
-            boolean interacted = interactedBlocks.contains(blockEntity.getPos());
-            if (interacted && hideOpened.get()) continue;  // Skip rendering if "hideOpened" is true
+        for (net.minecraft.world.chunk.Chunk chunk : Utils.chunks()) {
+            if (!(chunk instanceof net.minecraft.world.chunk.WorldChunk worldChunk)) continue;
 
-            getBlockEntityColor(blockEntity);
+            for (BlockEntity blockEntity : worldChunk.getBlockEntities().values()) {
+                if (blockEntity == null || blockEntity.getPos() == null) continue;
 
-            // Set the color to openedColor if its alpha is greater than 0
-            if (interacted && openedColor.get().a > 0) {
-                // openedColor takes precedence.
-                lineColor.set(openedColor.get());
-                sideColor.set(openedColor.get());
-                sideColor.a = fillOpacity.get(); // Maintain fill opacity setting for consistency
-            }
+                BlockPos pos = blockEntity.getPos();
 
-            if (render) {
-                double dist = PlayerUtils.squaredDistanceTo(blockEntity.getPos().getX() + 0.5, blockEntity.getPos().getY() + 0.5, blockEntity.getPos().getZ() + 0.5);
-                double a = 1;
-                if (dist <= fadeDistance.get() * fadeDistance.get()) a = dist / (fadeDistance.get() * fadeDistance.get());
+                boolean interacted = interactedBlocks.contains(pos);
+                if (interacted && hideOpened.get()) continue;
 
-                if (a < 0.075) continue;
+                getBlockEntityColor(blockEntity);
+                if (!render) continue;
 
-                // Only start a mesh when there's something to render
-                if (count == 0 && mode.get() == Mode.Shader) {
-                    mesh.begin();
+                if (interacted && openedColor.get().a > 0) {
+                    lineColor.set(openedColor.get());
+                    sideColor.set(openedColor.get());
+                    sideColor.a = fillOpacity.get();
                 }
 
                 int prevLineA = lineColor.a;
                 int prevSideA = sideColor.a;
 
-                lineColor.a *= a;
-                sideColor.a *= a;
+                if (fadeDistance.get() > 0) {
+                    double dist = Math.sqrt(PlayerUtils.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
+                    if (dist > fadeDistance.get()) {
+                        double fadeRatio = Math.max(0.0, 1.0 - (dist - fadeDistance.get()) / 10.0);
+                        if (fadeRatio <= 0.05) continue;
+                        lineColor.a = (int) (lineColor.a * fadeRatio);
+                        sideColor.a = (int) (sideColor.a * fadeRatio);
+                    }
+                }
+
+                if (count == 0 && mode.get() == Mode.Shader) {
+                    mesh.begin();
+                }
 
                 if (tracers.get()) {
-                    event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z, blockEntity.getPos().getX() + 0.5, blockEntity.getPos().getY() + 0.5, blockEntity.getPos().getZ() + 0.5, lineColor);
+                    Color tc = lineColor.copy();
+                    tc.a = 255;
+                    event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z,
+                            pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, tc);
                 }
 
                 if (mode.get() == Mode.Box) {
                     renderBox(event, blockEntity);
-                }
-
-                if (mode.get() == Mode.Shader) {
+                } else if (mode.get() == Mode.Shader) {
                     renderShader(event, blockEntity);
                 }
 
@@ -309,20 +335,19 @@ public class StorageESP extends Module {
         }
     }
 
-
     private void renderBox(Render3DEvent event, BlockEntity blockEntity) {
         double x1 = blockEntity.getPos().getX();
         double y1 = blockEntity.getPos().getY();
         double z1 = blockEntity.getPos().getZ();
 
-        double x2 = blockEntity.getPos().getX() + 1;
-        double y2 = blockEntity.getPos().getY() + 1;
-        double z2 = blockEntity.getPos().getZ() + 1;
+        double x2 = x1 + 1;
+        double y2 = y1 + 1;
+        double z2 = z1 + 1;
 
         int excludeDir = 0;
         if (blockEntity instanceof ChestBlockEntity) {
             BlockState state = mc.world.getBlockState(blockEntity.getPos());
-            if ((state.getBlock() == Blocks.CHEST || state.getBlock() == Blocks.TRAPPED_CHEST) && state.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE) {
+            if (state.getBlock() instanceof ChestBlock && state.contains(ChestBlock.CHEST_TYPE) && state.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE) {
                 excludeDir = Dir.get(ChestBlock.getFacing(state));
             }
         }
@@ -353,10 +378,5 @@ public class StorageESP extends Module {
 
     public boolean isShader() {
         return isActive() && mode.get() == Mode.Shader;
-    }
-
-    public enum Mode {
-        Box,
-        Shader
     }
 }

@@ -124,6 +124,7 @@ public abstract class GameRendererMixin implements IGameRenderer {
         Render3DEvent event = Render3DEvent.get(matrixStack, renderer, depthRenderer, tickDelta, camera.getCameraPos().x, camera.getCameraPos().y, camera.getCameraPos().z);
 
         // Update model view matrix
+        Utils.rendering3D = true;
 
         RenderSystem.getModelViewStack().pushMatrix().mul(position);
 
@@ -144,15 +145,19 @@ public abstract class GameRendererMixin implements IGameRenderer {
 
         // Render
 
-        renderer.begin();
-        depthRenderer.begin();
-        PaladiClient.EVENT_BUS.post(event);
-        renderer.render(matrixStack);
-        depthRenderer.render(matrixStack);
-
-        // Revert model view matrix
-
-        RenderSystem.getModelViewStack().popMatrix();
+        try {
+            Utils.rendering3D = true;
+            renderer.begin();
+            depthRenderer.begin();
+            PaladiClient.EVENT_BUS.post(event);
+            renderer.render(matrixStack);
+            depthRenderer.render(matrixStack);
+        } catch (Exception e) {
+            PaladiClient.LOG.error("Error rendering 3D event", e);
+        } finally {
+            // Revert model view matrix
+            RenderSystem.getModelViewStack().popMatrix();
+        }
 
         Profilers.get().pop();
     }
@@ -259,6 +264,5 @@ public abstract class GameRendererMixin implements IGameRenderer {
     @Override
     public void Paladi$flushGuiState() {
         guiRenderer.render(fogRenderer.getFogBuffer(FogRenderer.FogType.NONE));
-        guiRenderer.incrementFrame();
     }
 }

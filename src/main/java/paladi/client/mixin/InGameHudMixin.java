@@ -49,6 +49,16 @@ public abstract class InGameHudMixin {
         Utils.scaledProjection();
 
         Profilers.get().pop();
+
+        if (mc.currentScreen == null && !mc.options.hudHidden && !Modules.get().get(NoRender.class).noCrosshair()) {
+            int cx = context.getScaledWindowWidth() / 2;
+            int cy = context.getScaledWindowHeight() / 2;
+            int r = 3; // Tiny 7x7px crosshair like vanilla
+
+            // Clean 1px thin white cross (+) without thick black border
+            context.fill(cx - r, cy, cx + r + 1, cy + 1, 0xFFFFFFFF);
+            context.fill(cx, cy - r, cx + 1, cy + r + 1, 0xFFFFFFFF);
+        }
     }
 
     @Inject(method = "renderStatusEffectOverlay", at = @At("HEAD"), cancellable = true)

@@ -23,7 +23,9 @@ public class BadOptimizationsHook implements BooleanSupplier {
         Modules m = Modules.get();
         if (m == null) return false;
 
-        int state = (m.get(Fullbright.class).getGamma() ? 1 : 0) | (m.isActive(Xray.class) ? 2 : 0);
+        Fullbright fullbright = m.get(Fullbright.class);
+        boolean gamma = fullbright != null && fullbright.getGamma();
+        int state = (gamma ? 1 : 0) | (m.isActive(Xray.class) ? 2 : 0);
         boolean changed = state != lastState;
         lastState = state;
         return changed;

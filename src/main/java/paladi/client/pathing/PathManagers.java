@@ -19,6 +19,8 @@ public class PathManagers {
 
     @PreInit
     public static void init() {
+        SmartNavigator.init();
+
         if (exists("meteordevelopment.voyager.PathManager")) {
             try {
                 INSTANCE = (IPathManager) Class.forName("meteordevelopment.voyager.PathManager").getConstructor().newInstance();

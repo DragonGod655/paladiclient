@@ -71,6 +71,8 @@ public class Commands {
         add(new HelpCommand());
         add(new SeedCommand());
         add(new ChibiCommand());
+        add(new SmartPathCommand());
+        add(new DawnCommand());
 
         COMMANDS.sort(Comparator.comparing(Command::getName));
 

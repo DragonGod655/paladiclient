@@ -26,6 +26,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.dimension.DimensionType;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class BlockESP extends Module {
     private final Setting<List<Block>> blocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("blocks")
         .description("Blocks to search for.")
+        .defaultValue(Collections.emptyList())
         .onChanged(blocks1 -> {
             if (isActive() && Utils.canUpdate()) onActivate();
         })
@@ -53,10 +55,10 @@ public class BlockESP extends Module {
         .defaultValue(
             new ESPBlockData(
                 ShapeMode.Lines,
-                new SettingColor(0, 255, 200),
-                new SettingColor(0, 255, 200, 25),
+                new SettingColor(16, 106, 206),
+                new SettingColor(16, 106, 206, 30),
                 true,
-                new SettingColor(0, 255, 200, 125)
+                new SettingColor(16, 106, 206, 125)
             )
         )
         .build()
@@ -240,12 +242,14 @@ public class BlockESP extends Module {
                 ESPChunk chunk = it.next();
 
                 if (chunk.shouldBeDeleted()) {
-                    workerThread.submit(() -> {
+                    if (chunk.blocks != null) {
                         for (ESPBlock block : chunk.blocks.values()) {
-                            block.group.remove(block, false);
+                            if (block.group != null) {
+                                block.group.remove(block, false);
+                            }
                             block.loaded = false;
                         }
-                    });
+                    }
 
                     it.remove();
                 }
@@ -253,7 +257,12 @@ public class BlockESP extends Module {
             }
 
             if (tracers.get()) {
-                for (ESPGroup group : groups) {
+                for (Iterator<ESPGroup> it = groups.iterator(); it.hasNext();) {
+                    ESPGroup group = it.next();
+                    if (group.blocks.isEmpty()) {
+                        it.remove();
+                        continue;
+                    }
                     group.render(event);
                 }
             }

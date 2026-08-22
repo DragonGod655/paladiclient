@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "name": "Paladi Client",
+  "id": "paladi-client",
+  "version": "${version}",
+  "description": "Tu dong sell/order items.",
+  "authors": [
+    "AutoSell"
+  ],
+  "contact": {
+    "homepage": "",
+    "issues": "",
+    "sources": "",
+    "discord": ""
+  },
+  "license": "GPL-3.0",
+  "icon": "assets/paladi-client/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "paladi.client.PaladiClient"
+    ],
+    "modmenu": [
+      "paladi.client.modintegration.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "paladi-client.mixins.json",
+    "paladi-client-baritone.mixins.json",
+    "paladi-client-indigo.mixins.json",
+    "paladi-client-sodium.mixins.json",
+    "paladi-client-lithium.mixins.json",
+    "paladi-client-viafabricplus.mixins.json"
+  ],
+  "accessWidener": "paladi-client.accesswidener",
+  "custom": {
+    "paladi-client:build_number": "${build_number}",
+    "paladi-client:color": "100,180,255",
+    "paladi-client:commit": "${commit}",
+    "modmenu": {
+      "links": {}
+    },
+    "badoptimizations:cache_hooks": {
+      "lightmap": "paladi.client.modintegration.BadOptimizationsHook"
+    }
+  },
+  "depends": {
+    "java": ">=21",
+    "minecraft": ["${minecraft_version}"],
+    "fabricloader": ">=${loader_version}"
+  },
+  "recommends": {
+    "baritone-meteor": "*"
+  },
+  "breaks": {
+    "optifabric": "*",
+    "origins": "*",
+    "sodium": "<0.8.7",
+    "lithium": "<0.21.3"
+  }
+}

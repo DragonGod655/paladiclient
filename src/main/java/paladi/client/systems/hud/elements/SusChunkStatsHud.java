@@ -53,8 +53,8 @@ public class SusChunkStatsHud extends HudElement {
         // Header
         renderer.text("SUS SCANNER v2", x + 5, y + 5, RED, false, 0.7);
 
-        // Chunk Info
-        String chunkText = "Chunk: " + current.x + ", " + current.z;
+        // XYZ Info
+        String chunkText = String.format("XYZ: %d, %d, %d", (int) mc.player.getX(), (int) mc.player.getY(), (int) mc.player.getZ());
         renderer.text(chunkText, x + 5, y + 15, WHITE, false, 0.8);
 
         // Speed Info

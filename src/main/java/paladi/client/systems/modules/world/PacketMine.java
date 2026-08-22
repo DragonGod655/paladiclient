@@ -47,6 +47,15 @@ public class PacketMine extends Module {
         .build()
     );
 
+    public final Setting<Double> progressLimit = sgGeneral.add(new DoubleSetting.Builder()
+        .name("progress-limit")
+        .description("The breaking progress threshold to instantly break the block.")
+        .defaultValue(1.0)
+        .min(0.5)
+        .max(1.0)
+        .build()
+    );
+
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
         .description("Sends rotation packets to the server when mining.")
@@ -230,7 +239,7 @@ public class PacketMine extends Module {
         }
 
         public boolean isReady() {
-            return progress() >= 1;
+            return progress() >= progressLimit.get();
         }
 
         public double progress() {

@@ -55,7 +55,9 @@ public class MeshBuilder {
     }
 
     public void begin() {
-        if (building) throw new IllegalStateException("Mesh.begin() called while already building.");
+        if (building) {
+            end();
+        }
 
         verticesPointer = verticesPointerStart;
         vertexI = 0;

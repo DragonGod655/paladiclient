@@ -35,13 +35,13 @@ public class Renderer3D {
         MeshRenderer.begin()
             .attachments(MinecraftClient.getInstance().getFramebuffer())
             .pipeline(linesPipeline)
-            .mesh(lines, matrices)
+            .mesh(lines)
             .end();
 
         MeshRenderer.begin()
             .attachments(MinecraftClient.getInstance().getFramebuffer())
             .pipeline(trianglesPipeline)
-            .mesh(triangles, matrices)
+            .mesh(triangles)
             .end();
     }
 

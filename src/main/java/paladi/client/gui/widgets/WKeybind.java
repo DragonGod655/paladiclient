@@ -5,10 +5,19 @@
 
 package paladi.client.gui.widgets;
 
+import paladi.client.PaladiClient;
+import paladi.client.events.Paladi.KeyEvent;
+import paladi.client.events.Paladi.MouseClickEvent;
+import net.minecraft.client.gui.Click;
 import paladi.client.gui.widgets.containers.WHorizontalList;
 import paladi.client.gui.widgets.pressable.WButton;
 import paladi.client.systems.modules.Modules;
 import paladi.client.utils.misc.Keybind;
+import paladi.client.utils.misc.input.KeyAction;
+import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.EventPriority;
+import net.minecraft.client.input.KeyInput;
+import org.lwjgl.glfw.GLFW;
 
 public class WKeybind extends WHorizontalList {
     public Runnable action;
@@ -23,6 +32,7 @@ public class WKeybind extends WHorizontalList {
     public WKeybind(Keybind keybind, Keybind defaultValue) {
         this.keybind = keybind;
         this.defaultValue = defaultValue;
+        PaladiClient.EVENT_BUS.subscribe(this);
     }
 
     @Override
@@ -36,6 +46,48 @@ public class WKeybind extends WHorizontalList {
         };
 
         refreshLabel();
+    }
+
+    @Override
+    public boolean onKeyPressed(KeyInput input) {
+        if (listening) {
+            if (input.key() == GLFW.GLFW_KEY_ESCAPE || input.key() == GLFW.GLFW_KEY_BACKSPACE || input.key() == GLFW.GLFW_KEY_DELETE) {
+                return onClear();
+            }
+            return onAction(true, input.key(), input.modifiers());
+        }
+        return super.onKeyPressed(input);
+    }
+
+    @Override
+    public boolean onMouseClicked(Click click, boolean doubled) {
+        if (listening) {
+            return onAction(false, click.button(), 0);
+        }
+        return super.onMouseClicked(click, doubled);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private void onKeyEvent(KeyEvent event) {
+        if (!listening) return;
+        if (event.action == KeyAction.Press) {
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_BACKSPACE || event.key() == GLFW.GLFW_KEY_DELETE) {
+                onClear();
+                event.cancel();
+            } else if (onAction(true, event.key(), event.modifiers())) {
+                event.cancel();
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private void onMouseClickEvent(MouseClickEvent event) {
+        if (!listening) return;
+        if (event.action == KeyAction.Press) {
+            if (onAction(false, event.button(), 0)) {
+                event.cancel();
+            }
+        }
     }
 
     public boolean onClear() {

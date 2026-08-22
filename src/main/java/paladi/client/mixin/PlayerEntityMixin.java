@@ -75,13 +75,22 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         if (!getEntityWorld().isClient()) return breakSpeed;
 
         SpeedMine speedMine = Modules.get().get(SpeedMine.class);
-        if (!speedMine.isActive() || speedMine.mode.get() != SpeedMine.Mode.Normal || !speedMine.filter(block.getBlock())) return breakSpeed;
+        if (!speedMine.isActive() || !speedMine.filter(block.getBlock())) return breakSpeed;
 
-        float breakSpeedMod = (float) (breakSpeed * speedMine.modifier.get());
+        float multiplier = 1f;
+        if (speedMine.mode.get() == SpeedMine.Mode.Normal) {
+            multiplier = speedMine.modifier.get().floatValue();
+        } else if (speedMine.mode.get() == SpeedMine.Mode.Haste || speedMine.hasteSpoof.get()) {
+            multiplier = 1f + 0.2f * speedMine.hasteAmplifier.get();
+        } else {
+            return breakSpeed;
+        }
+
+        float breakSpeedMod = breakSpeed * multiplier;
 
         if (mc.crosshairTarget instanceof BlockHitResult bhr) {
             BlockPos pos = bhr.getBlockPos();
-            if (speedMine.modifier.get() < 1 || (BlockUtils.canInstaBreak(pos, breakSpeed) == BlockUtils.canInstaBreak(pos, breakSpeedMod))) {
+            if (multiplier < 1 || (BlockUtils.canInstaBreak(pos, breakSpeed) == BlockUtils.canInstaBreak(pos, breakSpeedMod))) {
                 return breakSpeedMod;
             } else {
                 return 0.9f / BlockUtils.calcBlockBreakingDelta2(pos, 1);

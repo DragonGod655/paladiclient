@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "name": "Paladi client",
+  "name": "Paladi Client",
   "id": "paladi-client",
   "version": "${version}",
-  "description": "Based utility mod.",
+  "description": "Tu dong sell/order items.",
   "authors": [
-    "Đức Huy"
+    "AutoSell"
   ],
   "contact": {
-    "homepage": "https://PaladiClient.com",
-    "issues": "https://github.com/MeteorDevelopment/paladi-client/issues",
-    "sources": "https://github.com/MeteorDevelopment/paladi-client",
-    "discord": "https://PaladiClient.com/discord"
+    "homepage": "",
+    "issues": "",
+    "sources": "",
+    "discord": ""
   },
   "license": "GPL-3.0",
   "icon": "assets/paladi-client/icon.png",
@@ -38,9 +38,7 @@
     "paladi-client:color": "100,180,255",
     "paladi-client:commit": "${commit}",
     "modmenu": {
-      "links": {
-        "modmenu.discord": "https://PaladiClient.com/discord"
-      }
+      "links": {}
     },
     "badoptimizations:cache_hooks": {
       "lightmap": "paladi.client.modintegration.BadOptimizationsHook"
@@ -51,12 +49,13 @@
     "minecraft": ["${minecraft_version}"],
     "fabricloader": ">=${loader_version}"
   },
+  "recommends": {
+    "baritone-meteor": "*"
+  },
   "breaks": {
     "optifabric": "*",
-    "feather": "*",
     "origins": "*",
     "sodium": "<0.8.7",
-    "morechathistory": "*",
     "lithium": "<0.21.3"
   }
 }

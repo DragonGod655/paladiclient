@@ -157,10 +157,8 @@ public class PaladiClient implements ClientModInitializer {
     @EventHandler
     private void onKey(KeyEvent event) {
         if (event.action == KeyAction.Press) {
-            if (KeyBinds.OPEN_GUI.matchesKey(event.input)) {
+            if (KeyBinds.OPEN_GUI.matchesKey(event.input) || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) {
                 toggleGui();
-            } else if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_U && (paladi.client.utils.misc.input.Input.isKeyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) || paladi.client.utils.misc.input.Input.isKeyPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT))) {
-                Modules.get().get(paladi.client.systems.modules.render.Freecam.class).toggle();
             }
         }
     }

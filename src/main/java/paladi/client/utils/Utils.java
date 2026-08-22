@@ -225,10 +225,10 @@ public class Utils {
         float width = (float) (mc.getWindow().getFramebufferWidth() / mc.getWindow().getScaleFactor());
         float height = (float) (mc.getWindow().getFramebufferHeight() / mc.getWindow().getScaleFactor());
 
-        RenderSystem.setProjectionMatrix(matrix.set(width, height), ProjectionType.PERSPECTIVE);
+        RenderSystem.setProjectionMatrix(matrix.set(width, height), ProjectionType.ORTHOGRAPHIC);
         RenderUtils.projection.set(((ProjectionMatrix2Accessor) matrix).Paladi$callGetMatrix(width, height));
 
-        rendering3D = true;
+        rendering3D = false;
     }
 
     public static Vec3d vec3d(BlockPos pos) {

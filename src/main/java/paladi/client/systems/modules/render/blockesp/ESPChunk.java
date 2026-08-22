@@ -72,6 +72,9 @@ public class ESPChunk {
     }
 
     public boolean shouldBeDeleted() {
+        if (mc.world == null || mc.player == null) return true;
+        if (!mc.world.getChunkManager().isChunkLoaded(x, z)) return true;
+
         int viewDist = getRenderDistance() + 1;
         int chunkX = ChunkSectionPos.getSectionCoord(mc.player.getBlockPos().getX());
         int chunkZ = ChunkSectionPos.getSectionCoord(mc.player.getBlockPos().getZ());

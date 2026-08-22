@@ -250,6 +250,8 @@ public abstract class WidgetScreen extends Screen {
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         if (this.client.world == null) {
             this.renderPanoramaBackground(context, deltaTicks);
+        } else {
+            this.renderInGameBackground(context);
         }
     }
 
@@ -277,6 +279,11 @@ public abstract class WidgetScreen extends Screen {
 
         RENDERER.begin(context);
         RENDERER.setAlpha(animProgress);
+        if (mc.world != null) {
+            RENDERER.quad(0, 0, getWindowWidth(), getWindowHeight(), new paladi.client.utils.render.color.Color(0, 0, 0, (int) (120 * animProgress)));
+        } else {
+            RENDERER.quad(0, 0, getWindowWidth(), getWindowHeight(), new paladi.client.utils.render.color.Color(20, 20, 25, (int) (220 * animProgress)));
+        }
         root.render(RENDERER, mouseX, mouseY, delta / 20);
         RENDERER.setAlpha(1);
         RENDERER.end();

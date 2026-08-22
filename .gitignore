@@ -32,3 +32,21 @@ licenses.db
 licenses.db-*
 __pycache__/
 .env
+
+# Scratch and decompiled dumps
+scratch/
+*_decomp.txt
+*_dump.txt
+*.mp3
+*.jar
+!src/main/resources/**/*.jar
+*.class
+*.exe
+tools/
+paladi/
+calcium_check/
+temp_glazed/
+old_theme.java
+dist/
+
+

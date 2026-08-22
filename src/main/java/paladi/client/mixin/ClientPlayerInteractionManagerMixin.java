@@ -72,7 +72,7 @@ public abstract class ClientPlayerInteractionManagerMixin implements IClientPlay
 
             if (!sm.instamine() || !sm.filter(state.getBlock())) return;
 
-            if (state.calcBlockBreakingDelta(mc.player, mc.world, blockPos) > 0.5f) {
+            if (state.calcBlockBreakingDelta(mc.player, mc.world, blockPos) > sm.instamineLimit.get().floatValue()) {
                 breakBlock(blockPos);
                 sendSequencedPacket(mc.world, (sequence) -> new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, blockPos, direction, sequence));
                 sendSequencedPacket(mc.world, (sequence) -> new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, blockPos, direction, sequence));

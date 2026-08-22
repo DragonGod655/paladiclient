@@ -22,6 +22,8 @@ import net.minecraft.item.AxeItem;
 import net.minecraft.item.Items;
 import net.minecraft.registry.tag.ItemTags;
 
+import paladi.client.systems.modules.krypton.KryptonAutoTotem;
+
 import static meteordevelopment.orbit.EventPriority.HIGHEST;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 
@@ -146,6 +148,19 @@ public class Offhand extends Module {
         currentItem = preferreditem.get();
     }
 
+    private boolean isTotemLocked() {
+        AutoTotem autoTotem = Modules.get().get(AutoTotem.class);
+        if (autoTotem != null && autoTotem.isLocked()) return true;
+
+        KryptonAutoTotem kryptonAutoTotem = Modules.get().get(KryptonAutoTotem.class);
+        if (kryptonAutoTotem != null && kryptonAutoTotem.isLocked()) return true;
+
+        TotemInventory totemInv = Modules.get().get(TotemInventory.class);
+        if (totemInv != null && totemInv.isLocked()) return true;
+
+        return false;
+    }
+
     @EventHandler(priority = HIGHEST + 999)
     private void onTick(TickEvent.Pre event) {
         FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
@@ -168,8 +183,6 @@ public class Offhand extends Module {
             return;
         }
         ticks++;
-
-        AutoTotem autoTotem = Modules.get().get(AutoTotem.class);
 
         // Returns to the original Item
         currentItem = preferreditem.get();
@@ -225,7 +238,7 @@ public class Offhand extends Module {
                     }
 
                     // Swap to offhand
-                    else if ((isClicking || !autoTotem.isLocked() && !item.isOffhand())) {
+                    else if ((isClicking || !isTotemLocked() && !item.isOffhand())) {
                         InvUtils.move().from(item.slot()).toOffhand();
                         sentMessage = false;
                     }
@@ -240,7 +253,7 @@ public class Offhand extends Module {
     @EventHandler
     private void onMouseClick(MouseClickEvent event) {
         // Detects if the User is right-clicking
-        isClicking = mc.currentScreen == null && !Modules.get().get(AutoTotem.class).isLocked() && !usableItem() && !mc.player.isUsingItem() && event.action == KeyAction.Press && event.button() == GLFW_MOUSE_BUTTON_RIGHT;
+        isClicking = mc.currentScreen == null && !isTotemLocked() && !usableItem() && !mc.player.isUsingItem() && event.action == KeyAction.Press && event.button() == GLFW_MOUSE_BUTTON_RIGHT;
     }
 
     private boolean usableItem() {

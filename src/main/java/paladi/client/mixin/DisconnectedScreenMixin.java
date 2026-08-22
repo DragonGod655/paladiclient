@@ -22,6 +22,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.lang.reflect.Field;
+
 import static paladi.client.PaladiClient.mc;
 
 @Mixin(DisconnectedScreen.class)
@@ -59,11 +61,38 @@ public abstract class DisconnectedScreenMixin extends Screen {
         AutoReconnect autoReconnect = Modules.get().get(AutoReconnect.class);
         if (!autoReconnect.isActive() || autoReconnect.lastServerConnection == null) return;
 
+        // Chặn tự động kết nối lại nếu có kích hoạt bảo vệ
+        if (isAutoSellBlockReconnectEnabled()) {
+            return;
+        }
+
         if (time <= 0) {
             tryConnecting();
         } else {
             time--;
             if (reconnectBtn != null) reconnectBtn.setMessage(Text.literal(getText()));
+        }
+    }
+
+    @Unique
+    private boolean isAutoSellBlockReconnectEnabled() {
+        try {
+            Class<?> autoSellModClass = Class.forName("autosell.AutoSellMod");
+            Field field = autoSellModClass.getField("blockReconnect");
+            return field.getBoolean(null);
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    @Unique
+    private void resetAutoSellBlockReconnect() {
+        try {
+            Class<?> autoSellModClass = Class.forName("autosell.AutoSellMod");
+            Field field = autoSellModClass.getField("blockReconnect");
+            field.setBoolean(null, false);
+        } catch (Throwable ignored) {
+            // Ignore when the autosell module is not present in the current build.
         }
     }
 
@@ -76,6 +105,7 @@ public abstract class DisconnectedScreenMixin extends Screen {
 
     @Unique
     private void tryConnecting() {
+        resetAutoSellBlockReconnect(); // Reset cờ chặn khi click kết nối thủ công
         var lastServer = Modules.get().get(AutoReconnect.class).lastServerConnection;
         ConnectScreen.connect(new TitleScreen(), mc, lastServer.left(), lastServer.right(), false, null);
     }

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "name": "Auto Sell Pro Vip",
+  "id": "autosell",
+  "version": "${version}",
+  "description": "Tự động sell/order items.",
+  "authors": [
+    "AutoSell"
+  ],
+  "contact": {
+    "homepage": "",
+    "issues": "",
+    "sources": "",
+    "discord": ""
+  },
+  "license": "GPL-3.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "autosell.AutoSellMod"
+    ]
+  },
+  "mixins": [
+    "autosell.mixins.json"
+  ],
+  "depends": {
+    "java": ">=21",
+    "minecraft": ["${minecraft_version}"],
+    "fabricloader": ">=${loader_version}"
+  }
+}

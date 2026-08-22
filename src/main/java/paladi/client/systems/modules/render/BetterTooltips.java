@@ -192,7 +192,7 @@ public class BetterTooltips extends Module {
     public final Setting<Boolean> byteSize = sgOther.add(new BoolSetting.Builder()
         .name("byte-size")
         .description("Displays an item's size in bytes in the tooltip.")
-        .defaultValue(true)
+        .defaultValue(false)
         .onChanged(value -> updateTooltips = true)
         .build()
     );

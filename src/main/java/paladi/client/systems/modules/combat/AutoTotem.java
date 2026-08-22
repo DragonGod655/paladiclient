@@ -49,6 +49,13 @@ public class AutoTotem extends Module {
         .build()
     );
 
+    private final Setting<Boolean> hotbarFallback = sgGeneral.add(new BoolSetting.Builder()
+        .name("hotbar-fallback")
+        .description("Instantly switches mainhand hotbar slot to totem if offhand is not ready or when totem pops.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Boolean> elytra = sgGeneral.add(new BoolSetting.Builder()
         .name("elytra")
         .description("Will always hold a totem when flying with elytra.")
@@ -77,23 +84,61 @@ public class AutoTotem extends Module {
     private int totems, ticks;
 
     public AutoTotem() {
-        super(Categories.Combat, "auto-totem", "Automatically equips a totem in your offhand.");
+        super(Categories.Combat, "auto-totem", "Automatically equips a totem in your offhand with instant pop recovery.");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     private void onTick(TickEvent.Pre event) {
+        doEquip();
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onReceivePacket(PacketEvent.Receive event) {
+        if (mc.player == null || mc.world == null) return;
+        if (!(event.packet instanceof EntityStatusS2CPacket p)) return;
+        if (p.getStatus() != EntityStatuses.USE_TOTEM_OF_UNDYING) return;
+
+        Entity entity = p.getEntity(mc.world);
+        if (entity == null || !(entity.equals(mc.player))) return;
+
+        ticks = delay.get(); // Reset tick count so delay doesn't block immediate pop recovery
+
+        if (hotbarFallback.get()) {
+            FindItemResult hotbarTotem = InvUtils.findInHotbar(Items.TOTEM_OF_UNDYING);
+            if (hotbarTotem.found() && hotbarTotem.isHotbar()) {
+                InvUtils.swap(hotbarTotem.slot(), true);
+            }
+        }
+
+        doEquip();
+    }
+
+    private void doEquip() {
+        if (mc.player == null) return;
+
         FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
         totems = result.count();
 
-        if (totems <= 0) locked = false;
-        else if (ticks >= delay.get()) {
+        if (totems <= 0) {
+            locked = false;
+        } else if (ticks >= delay.get()) {
             boolean low = mc.player.getHealth() + mc.player.getAbsorptionAmount() - PlayerUtils.possibleHealthReductions(explosion.get(), fall.get()) <= health.get();
             boolean ely = elytra.get() && mc.player.getEquippedStack(EquipmentSlot.CHEST).getItem() == Items.ELYTRA && mc.player.isGliding();
 
             locked = mode.get() == Mode.Strict || (mode.get() == Mode.Smart && (low || ely));
 
-            if (locked && mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
-                InvUtils.move().from(result.slot()).toOffhand();
+            if (locked) {
+                // Emergency hotbar fallback while offhand is swapping or empty
+                if (hotbarFallback.get() && mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
+                    FindItemResult hotbarTotem = InvUtils.findInHotbar(Items.TOTEM_OF_UNDYING);
+                    if (hotbarTotem.found() && hotbarTotem.isHotbar()) {
+                        InvUtils.swap(hotbarTotem.slot(), true);
+                    }
+                }
+
+                if (mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
+                    InvUtils.move().from(result.slot()).toOffhand();
+                }
             }
 
             ticks = 0;
@@ -101,17 +146,6 @@ public class AutoTotem extends Module {
         }
 
         ticks++;
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    private void onReceivePacket(PacketEvent.Receive event) {
-        if (!(event.packet instanceof EntityStatusS2CPacket p)) return;
-        if (p.getStatus() != EntityStatuses.USE_TOTEM_OF_UNDYING) return;
-
-        Entity entity = p.getEntity(mc.world);
-        if (entity == null || !(entity.equals(mc.player))) return;
-
-        ticks = 0;
     }
 
     public boolean isLocked() {

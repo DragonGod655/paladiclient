@@ -16,6 +16,7 @@ import paladi.client.utils.player.InvUtils;
 import paladi.client.utils.world.BlockIterator;
 import paladi.client.utils.world.BlockUtils;
 import paladi.client.utils.Utils;
+import net.minecraft.util.math.BlockPos;
 
 public class SpawnerProtect extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -60,6 +61,10 @@ public class SpawnerProtect extends Module {
     );
 
     private int mineTimer = 0;
+    private BlockPos activeSpawnerPos = null;
+    private boolean isSneakingPressed = false;
+    private int breakDelayTicks = 0;
+    private boolean isMiningActive = false;
 
     public SpawnerProtect() {
         super(Categories.DONUT, "spawner-protect", "Tự động đào spawner khi có người hoặc tiếng bước chân lại gần.");
@@ -68,17 +73,52 @@ public class SpawnerProtect extends Module {
     @Override
     public void onActivate() {
         mineTimer = 0;
+        activeSpawnerPos = null;
+        isSneakingPressed = false;
+        breakDelayTicks = 0;
+        isMiningActive = false;
+    }
+
+    @Override
+    public void onDeactivate() {
+        if (isSneakingPressed) {
+            if (mc.options != null && mc.options.sneakKey != null) {
+                mc.options.sneakKey.setPressed(false);
+            }
+            isSneakingPressed = false;
+        }
+        activeSpawnerPos = null;
+        breakDelayTicks = 0;
+        isMiningActive = false;
     }
 
     @EventHandler
     private void onPlaySound(PlaySoundEvent event) {
-        if (!detectSound.get()) return;
+        if (!detectSound.get() || mc.player == null || mc.world == null) return;
         
         String soundName = event.sound.getId().getPath().toLowerCase();
         if (soundName.contains("step") || soundName.contains("footsteps")) {
-            double dist = Math.sqrt(mc.player.squaredDistanceTo(event.sound.getX(), event.sound.getY(), event.sound.getZ()));
+            double soundX = event.sound.getX();
+            double soundY = event.sound.getY();
+            double soundZ = event.sound.getZ();
+
+            // Kiểm tra xem âm thanh này có phát ra từ bản thân hoặc bạn bè không
+            boolean fromTrusted = false;
+            for (PlayerEntity player : mc.world.getPlayers()) {
+                if (player == mc.player || Friends.get().isFriend(player)) {
+                    double distSq = player.squaredDistanceTo(soundX, soundY, soundZ);
+                    if (distSq < 2.0 * 2.0) { // Tiếng bước chân trong phạm vi 2 block của người thân
+                        fromTrusted = true;
+                        break;
+                    }
+                }
+            }
+
+            if (fromTrusted) return; // Bỏ qua tiếng chân của chính mình và bạn bè
+
+            double dist = Math.sqrt(mc.player.squaredDistanceTo(soundX, soundY, soundZ));
             if (dist <= range.get()) {
-                triggerMine("tiếng bước chân");
+                triggerMine("tiếng bước chân lạ");
             }
         }
     }
@@ -87,7 +127,6 @@ public class SpawnerProtect extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mineTimer > 0) {
             mineTimer--;
-            mineSpawners();
         }
 
         if (detectPlayers.get()) {
@@ -101,38 +140,105 @@ public class SpawnerProtect extends Module {
                 }
             }
         }
+
+        // Bật trạng thái khai thác active khi được kích hoạt và phát hiện spawner trong tầm
+        if (mineTimer > 0 && findClosestSpawner(mineRadius.get()) != null) {
+            isMiningActive = true;
+        }
+
+        if (breakDelayTicks > 0) {
+            breakDelayTicks--;
+            if (isSneakingPressed) {
+                mc.options.sneakKey.setPressed(false);
+                isSneakingPressed = false;
+            }
+            return;
+        }
+
+        if (activeSpawnerPos != null) {
+            if (mc.world != null && mc.world.getBlockState(activeSpawnerPos).getBlock() != Blocks.SPAWNER) {
+                activeSpawnerPos = null;
+                breakDelayTicks = 6;
+                if (isSneakingPressed) {
+                    mc.options.sneakKey.setPressed(false);
+                    isSneakingPressed = false;
+                }
+                return;
+            }
+        }
+
+        if (isMiningActive) {
+            BlockPos closestSpawner = findClosestSpawner(mineRadius.get());
+            if (closestSpawner != null) {
+                activeSpawnerPos = closestSpawner;
+            } else {
+                // Đã đào sạch Spawner xung quanh
+                activeSpawnerPos = null;
+                isMiningActive = false;
+            }
+        }
+
+        if (isMiningActive && activeSpawnerPos != null) {
+            if (!isSneakingPressed) {
+                mc.options.sneakKey.setPressed(true);
+                isSneakingPressed = true;
+            }
+            mineSpawner(activeSpawnerPos);
+        } else {
+            if (isSneakingPressed) {
+                mc.options.sneakKey.setPressed(false);
+                isSneakingPressed = false;
+            }
+        }
     }
 
     private void triggerMine(String cause) {
         if (mineTimer == 0 && alertChat.get()) {
             info("Phát hiện " + cause + "! Bắt đầu đào spawner...");
         }
-        // Đào liên tục trong 20 tick (1 giây) sau mỗi lần phát hiện
         mineTimer = 20;
     }
 
-    private void mineSpawners() {
-        int radius = mineRadius.get();
-        BlockIterator.register(radius, radius, (pos, state) -> {
-            if (state.getBlock() == Blocks.SPAWNER) {
-                // Tìm cúp có Silk Touch trong toàn bộ kho đồ
-                FindItemResult pickaxe = InvUtils.find(itemStack -> itemStack.isIn(ItemTags.PICKAXES) && Utils.hasEnchantment(itemStack, Enchantments.SILK_TOUCH));
-                
-                if (pickaxe.found()) {
-                    // Nếu nằm trong túi đồ nhưng không ở hotbar, chuyển nó vào hotbar (ô số 0)
-                    if (!pickaxe.isHotbar()) {
-                        InvUtils.move().from(pickaxe.slot()).toHotbar(0);
+    private BlockPos findClosestSpawner(int radius) {
+        if (mc.player == null || mc.world == null) return null;
+
+        BlockPos playerPos = mc.player.getBlockPos();
+        BlockPos closest = null;
+        double closestDist = Double.MAX_VALUE;
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                for (int y = -radius; y <= radius; y++) {
+                    BlockPos pos = playerPos.add(x, y, z);
+                    if (pos.getY() < mc.world.getBottomY() || pos.getY() > mc.world.getHeight()) continue;
+
+                    if (mc.world.getBlockState(pos).getBlock() == Blocks.SPAWNER) {
+                        double dist = mc.player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closest = pos;
+                        }
                     }
-                    InvUtils.swap(pickaxe.slot(), true);
-                } else {
-                    if (mineTimer == 19 && alertChat.get()) warning("Không tìm thấy cúp có Mềm Mại (Silk Touch) trong kho đồ!");
-                    return; // Dừng lại, không đào nếu không có cúp mềm mại để bảo vệ spawner
                 }
-                
-                // Tiến hành đào (chuyển tay & gửi packet break)
-                BlockUtils.breakBlock(pos, true);
-                InvUtils.swapBack();
             }
-        });
+        }
+        return closest;
+    }
+
+    private void mineSpawner(BlockPos pos) {
+        FindItemResult pickaxe = InvUtils.find(itemStack -> itemStack.isIn(ItemTags.PICKAXES) && Utils.hasEnchantment(itemStack, Enchantments.SILK_TOUCH));
+        
+        if (pickaxe.found()) {
+            if (!pickaxe.isHotbar()) {
+                InvUtils.move().from(pickaxe.slot()).toHotbar(0);
+            }
+            InvUtils.swap(pickaxe.slot(), true);
+        } else {
+            if (mineTimer == 19 && alertChat.get()) warning("Không tìm thấy cúp có Mềm Mại (Silk Touch) trong kho đồ!");
+            return;
+        }
+        
+        BlockUtils.breakBlock(pos, true);
+        InvUtils.swapBack();
     }
 }
