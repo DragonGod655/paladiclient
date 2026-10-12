@@ -32,7 +32,7 @@ public class Modules extends System<Modules> {
     private final Map<Class<? extends Module>, Module> moduleInstances = new Reference2ReferenceOpenHashMap<>();
     private final Map<Category, List<Module>> groups = new Reference2ReferenceOpenHashMap<>();
     private final List<Module> active = new ArrayList<>();
-    
+
     private Module moduleToBind;
 
     public Modules() {
@@ -236,14 +236,13 @@ public class Modules extends System<Modules> {
         addInternal(new AutoShearer());
         addInternal(new AutoSign());
         addInternal(new AutoSmelter());
-        addInternal(new BuildHeight());
         addInternal(new Collisions());
         addInternal(new EChestFarmer());
         addInternal(new EndermanLook());
         addInternal(new Flamethrower());
         if (paladi.client.pathing.BaritoneUtils.IS_AVAILABLE) {
+            addInternal(new AutoBuild());
             addInternal(new Excavator());
-            addInternal(new HighwayBuilder());
             addInternal(new InfinityMiner());
             addInternal(new LiquidFiller());
         }
@@ -328,6 +327,7 @@ public class Modules extends System<Modules> {
         add(new AutoSpawnerSell());
         add(new AutoSpawnerSelect());
         add(new AutoAxeSell());
+        add(new AutoShardSell());
         add(new ItemDropper());
         add(new NetheriteFinder());
         add(new RTPBaseFinder());
@@ -339,6 +339,8 @@ public class Modules extends System<Modules> {
         add(new SusChunkFinder());
         add(new KryptonAutoBuy());
         add(new AutoOrderCollect());
+        add(new AutoVillagerOrder());
+        add(new AutoBuild());
     }
 
     private void initBaseFinding() {
@@ -380,14 +382,12 @@ public class Modules extends System<Modules> {
         add(new AutoShearer());
         add(new AutoSign());
         add(new AutoSmelter());
-        add(new BuildHeight());
         add(new Collisions());
         add(new EChestFarmer());
         add(new EndermanLook());
         add(new Flamethrower());
         if (paladi.client.pathing.BaritoneUtils.IS_AVAILABLE) {
             add(new Excavator());
-            add(new HighwayBuilder());
             add(new InfinityMiner());
             add(new LiquidFiller());
         }
@@ -422,6 +422,7 @@ public class Modules extends System<Modules> {
                 module.onDeactivate();
             }
         }
+        save();
     }
 
     @EventHandler

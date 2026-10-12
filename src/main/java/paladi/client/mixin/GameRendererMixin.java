@@ -23,7 +23,6 @@ import paladi.client.systems.modules.Modules;
 import paladi.client.systems.modules.render.Freecam;
 import paladi.client.systems.modules.render.NoRender;
 import paladi.client.systems.modules.render.Zoom;
-import paladi.client.systems.modules.world.HighwayBuilder;
 import paladi.client.utils.Utils;
 import paladi.client.utils.render.CustomBannerGuiElementRenderer;
 import paladi.client.utils.render.NametagUtils;
@@ -208,9 +207,8 @@ public abstract class GameRendererMixin implements IGameRenderer {
     @Inject(method = "updateCrosshairTarget", at = @At("HEAD"), cancellable = true)
     private void updateTargetedEntityInvoke(float tickDelta, CallbackInfo info) {
         Freecam freecam = Modules.get().get(Freecam.class);
-        boolean highwayBuilder = Modules.get().isActive(HighwayBuilder.class);
 
-        if ((freecam.isActive() || highwayBuilder) && client.getCameraEntity() != null && !freecamSet) {
+        if (freecam.isActive() && client.getCameraEntity() != null && !freecamSet) {
             info.cancel();
             Entity cameraE = client.getCameraEntity();
 
@@ -225,19 +223,14 @@ public abstract class GameRendererMixin implements IGameRenderer {
             float lastYaw = cameraE.lastYaw;
             float lastPitch = cameraE.lastPitch;
 
-            if (highwayBuilder) {
-                cameraE.setYaw(camera.getYaw());
-                cameraE.setPitch(camera.getPitch());
-            } else {
-                ((IVec3d) cameraE.getEntityPos()).Paladi$set(freecam.pos.x, freecam.pos.y - cameraE.getEyeHeight(cameraE.getPose()), freecam.pos.z);
-                cameraE.lastX = freecam.prevPos.x;
-                cameraE.lastY = freecam.prevPos.y - cameraE.getEyeHeight(cameraE.getPose());
-                cameraE.lastZ = freecam.prevPos.z;
-                cameraE.setYaw(freecam.yaw);
-                cameraE.setPitch(freecam.pitch);
-                cameraE.lastYaw = freecam.lastYaw;
-                cameraE.lastPitch = freecam.lastPitch;
-            }
+            ((IVec3d) cameraE.getEntityPos()).Paladi$set(freecam.pos.x, freecam.pos.y - cameraE.getEyeHeight(cameraE.getPose()), freecam.pos.z);
+            cameraE.lastX = freecam.prevPos.x;
+            cameraE.lastY = freecam.prevPos.y - cameraE.getEyeHeight(cameraE.getPose());
+            cameraE.lastZ = freecam.prevPos.z;
+            cameraE.setYaw(freecam.yaw);
+            cameraE.setPitch(freecam.pitch);
+            cameraE.lastYaw = freecam.lastYaw;
+            cameraE.lastPitch = freecam.lastPitch;
 
             freecamSet = true;
             updateCrosshairTarget(tickDelta);

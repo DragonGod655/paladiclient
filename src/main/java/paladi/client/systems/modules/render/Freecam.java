@@ -6,6 +6,10 @@
 package paladi.client.systems.modules.render;
 
 
+import paladi.client.events.entity.player.AttackEntityEvent;
+import paladi.client.events.entity.player.InteractBlockEvent;
+import paladi.client.events.entity.player.InteractEntityEvent;
+import paladi.client.events.entity.player.StartBreakingBlockEvent;
 import paladi.client.events.game.GameLeftEvent;
 import paladi.client.events.game.OpenScreenEvent;
 import paladi.client.events.Paladi.KeyEvent;
@@ -34,6 +38,7 @@ import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.s2c.play.DeathMessageS2CPacket;
 import net.minecraft.network.packet.s2c.play.HealthUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.PlayerRespawnS2CPacket;
@@ -117,6 +122,32 @@ public class Freecam extends Module {
         .name("rotate")
         .description("Rotates to the block or entity you are looking at.")
         .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> placeBlocks = sgGeneral.add(new BoolSetting.Builder()
+        .name("place-blocks")
+        .description("Cho phép đặt và phá khối khi đang ở chế độ Freecam.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Double> placeRange = sgGeneral.add(new DoubleSetting.Builder()
+        .name("place-range")
+        .description("Khoảng cách tối đa từ nhân vật thật để đặt/phá khối khi ở Freecam (tối đa 4.5m theo chuẩn vanilla).")
+        .defaultValue(4.2)
+        .min(1.0)
+        .max(4.5)
+        .sliderMax(4.5)
+        .visible(placeBlocks::get)
+        .build()
+    );
+
+    private final Setting<Boolean> autoRotate = sgGeneral.add(new BoolSetting.Builder()
+        .name("auto-rotate")
+        .description("Tự động xoay nhân vật về phía khối khi đặt để qua mặt kiểm tra góc nhìn của Anti-Cheat (GrimAC/Paper).")
+        .defaultValue(true)
+        .visible(placeBlocks::get)
         .build()
     );
 
@@ -251,9 +282,9 @@ public class Freecam extends Module {
             if (mc.crosshairTarget instanceof EntityHitResult) {
                 crossHairPos = ((EntityHitResult) mc.crosshairTarget).getEntity().getBlockPos();
                 Rotations.rotate(Rotations.getYaw(crossHairPos), Rotations.getPitch(crossHairPos), 0, null);
-            } else {
-                crossHairPosition = mc.crosshairTarget.getPos();
-                crossHairPos = ((BlockHitResult) mc.crosshairTarget).getBlockPos();
+            } else if (mc.crosshairTarget instanceof BlockHitResult blockHitResult) {
+                crossHairPosition = blockHitResult.getPos();
+                crossHairPos = blockHitResult.getBlockPos();
 
                 if (!mc.world.getBlockState(crossHairPos).isAir()) {
                     Rotations.rotate(Rotations.getYaw(crossHairPosition), Rotations.getPitch(crossHairPosition), 0, null);
@@ -455,6 +486,116 @@ public class Freecam extends Module {
                 toggle();
                 info("Toggled off because you changed dimensions.");
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onInteractBlock(InteractBlockEvent event) {
+        if (!isActive()) return;
+
+        if (!placeBlocks.get()) {
+            event.cancel();
+            return;
+        }
+
+        if (event.result == null || mc.player == null || mc.world == null) {
+            event.cancel();
+            return;
+        }
+
+        Vec3d hitPos = event.result.getPos();
+        Vec3d eyePos = mc.player.getEyePos();
+        double maxAllowed = Math.min(placeRange.get(), 4.5);
+
+        // 1. Kiểm tra tầm với hợp lệ từ mắt nhân vật thật (chuẩn vanilla tối đa 4.5m)
+        if (eyePos.distanceTo(hitPos) > maxAllowed) {
+            event.cancel();
+            return;
+        }
+
+        // 2. Kiểm tra tầm nhìn (Line-of-sight) từ mắt nhân vật thật đến khối
+        // Chặn các cú click xuyên tường để tránh bị Anti-Cheat (GrimAC/Paper) kick văng
+        RaycastContext losCtx = new RaycastContext(
+            eyePos,
+            hitPos,
+            RaycastContext.ShapeType.COLLIDER,
+            RaycastContext.FluidHandling.NONE,
+            mc.player
+        );
+        BlockHitResult losResult = mc.world.raycast(losCtx);
+        if (losResult.getType() == HitResult.Type.BLOCK && !losResult.getBlockPos().equals(event.result.getBlockPos())) {
+            event.cancel();
+            return;
+        }
+
+        // 3. Tự động xoay nhân vật thật về phía khối an toàn mà không gửi packet di chuyển bất thường
+        if (autoRotate.get()) {
+            double yaw = Rotations.getYaw(hitPos);
+            double pitch = Rotations.getPitch(hitPos);
+            mc.player.setYaw((float) yaw);
+            mc.player.setPitch((float) pitch);
+            Rotations.rotate(yaw, pitch);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onStartBreakingBlock(StartBreakingBlockEvent event) {
+        if (!isActive()) return;
+
+        if (!placeBlocks.get()) {
+            event.cancel();
+            return;
+        }
+
+        if (event.blockPos == null || mc.player == null || mc.world == null) {
+            event.cancel();
+            return;
+        }
+
+        Vec3d blockCenter = Vec3d.ofCenter(event.blockPos);
+        Vec3d eyePos = mc.player.getEyePos();
+        double maxAllowed = Math.min(placeRange.get(), 4.5);
+
+        if (eyePos.distanceTo(blockCenter) > maxAllowed) {
+            event.cancel();
+            return;
+        }
+
+        RaycastContext losCtx = new RaycastContext(
+            eyePos,
+            blockCenter,
+            RaycastContext.ShapeType.COLLIDER,
+            RaycastContext.FluidHandling.NONE,
+            mc.player
+        );
+        BlockHitResult losResult = mc.world.raycast(losCtx);
+        if (losResult.getType() == HitResult.Type.BLOCK && !losResult.getBlockPos().equals(event.blockPos)) {
+            event.cancel();
+            return;
+        }
+
+        if (autoRotate.get()) {
+            double yaw = Rotations.getYaw(blockCenter);
+            double pitch = Rotations.getPitch(blockCenter);
+            mc.player.setYaw((float) yaw);
+            mc.player.setPitch((float) pitch);
+            Rotations.rotate(yaw, pitch);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onAttackEntity(AttackEntityEvent event) {
+        if (!isActive()) return;
+        if (mc.player == null || mc.player.getEyePos().distanceTo(event.entity.getEyePos()) > Math.min(placeRange.get(), 3.5)) {
+            event.cancel();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onInteractEntity(InteractEntityEvent event) {
+        if (!isActive()) return;
+        if (mc.player == null || mc.player.getEyePos().distanceTo(event.entity.getEyePos()) > Math.min(placeRange.get(), 3.5)) {
+            event.cancel();
         }
     }
 

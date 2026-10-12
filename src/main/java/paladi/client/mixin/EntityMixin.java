@@ -11,7 +11,6 @@ import paladi.client.PaladiClient;
 import paladi.client.events.entity.EntityMoveEvent;
 import paladi.client.events.entity.player.JumpVelocityMultiplierEvent;
 import paladi.client.events.entity.player.PlayerMoveEvent;
-import paladi.client.mixininterface.ICamera;
 import paladi.client.systems.modules.Modules;
 import paladi.client.systems.modules.combat.Hitboxes;
 import paladi.client.systems.modules.movement.*;
@@ -20,12 +19,10 @@ import paladi.client.systems.modules.render.ESP;
 import paladi.client.systems.modules.render.FreeLook;
 import paladi.client.systems.modules.render.Freecam;
 import paladi.client.systems.modules.render.NoRender;
-import paladi.client.systems.modules.world.HighwayBuilder;
 import paladi.client.utils.Utils;
 import paladi.client.utils.entity.fakeplayer.FakePlayerEntity;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
-import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.MovementType;
@@ -201,11 +198,6 @@ public abstract class EntityMixin {
 
         if (freecam.isActive()) {
             freecam.changeLookDirection(cursorDeltaX * 0.15, cursorDeltaY * 0.15);
-            ci.cancel();
-        }
-        else if (Modules.get().isActive(HighwayBuilder.class)) {
-            Camera camera = mc.gameRenderer.getCamera();
-            ((ICamera) camera).Paladi$setRot(camera.getYaw() + cursorDeltaX * 0.15, camera.getPitch() + cursorDeltaY * 0.15);
             ci.cancel();
         }
         else if (freeLook.cameraMode()) {

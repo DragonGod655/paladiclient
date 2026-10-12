@@ -12,7 +12,7 @@ import paladi.client.systems.modules.render.CameraTweaks;
 import paladi.client.systems.modules.render.FreeLook;
 import paladi.client.systems.modules.render.Freecam;
 import paladi.client.systems.modules.render.NoRender;
-import paladi.client.systems.modules.world.HighwayBuilder;
+import paladi.client.utils.player.Rotations;
 import net.minecraft.block.enums.CameraSubmersionType;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
@@ -84,13 +84,13 @@ public abstract class CameraMixin implements ICamera {
             args.set(0, (float) freecam.getYaw(tickDelta));
             args.set(1, (float) freecam.getPitch(tickDelta));
         }
-        else if (Modules.get().isActive(HighwayBuilder.class)) {
-            args.set(0, yaw);
-            args.set(1, pitch);
-        }
         else if (freeLook.isActive()) {
             args.set(0, freeLook.cameraYaw);
             args.set(1, freeLook.cameraPitch);
+        }
+        else if (Rotations.rotating) {
+            args.set(0, Rotations.getPreYaw());
+            args.set(1, Rotations.getPrePitch());
         }
     }
 

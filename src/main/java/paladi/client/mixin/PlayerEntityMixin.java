@@ -11,6 +11,7 @@ import paladi.client.PaladiClient;
 import paladi.client.events.entity.DropItemsEvent;
 import paladi.client.events.entity.player.ClipAtLedgeEvent;
 import paladi.client.systems.modules.Modules;
+import paladi.client.systems.modules.render.Freecam;
 import paladi.client.systems.modules.movement.Flight;
 import paladi.client.systems.modules.movement.NoSlow;
 import paladi.client.systems.modules.movement.Sprint;
@@ -135,7 +136,11 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
     @ModifyReturnValue(method = "getBlockInteractionRange", at = @At("RETURN"))
     private double modifyBlockInteractionRange(double original) {
-        return Math.max(0, original + Modules.get().get(Reach.class).blockReach());
+        double range = original + Modules.get().get(Reach.class).blockReach();
+        if (Modules.get().isActive(Freecam.class)) {
+            return Math.max(range, 16.0);
+        }
+        return Math.max(0, range);
     }
 
     @ModifyReturnValue(method = "getEntityInteractionRange", at = @At("RETURN"))

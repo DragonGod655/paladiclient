@@ -40,8 +40,25 @@ public class BaritonePathManager implements IPathManager {
         // Create settings
         settings = new BaritoneSettings();
 
+        // Configure realistic human-like settings by default
+        configureHumanLikeSettings();
+
         // Baritone pathing control
         BaritoneAPI.getProvider().getPrimaryBaritone().getPathingControlManager().registerProcess(new BaritoneProcess());
+    }
+
+    public static void configureHumanLikeSettings() {
+        try {
+            baritone.api.Settings bs = BaritoneAPI.getSettings();
+            if (bs != null) {
+                bs.antiCheatCompatibility.value = true;
+                bs.smoothLook.value = true;
+                bs.allowSprint.value = true;
+                bs.overshootTraverse.value = true;
+                bs.randomLooking.value = 0.05;
+                bs.jumpPenalty.value = 2.0;
+            }
+        } catch (Throwable ignored) {}
     }
 
     @Override

@@ -5,6 +5,8 @@
 
 package paladi.client.utils.misc.input;
 
+import net.fabricmc.loader.api.FabricLoader;
+
 import paladi.client.PaladiClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
@@ -13,10 +15,42 @@ import org.lwjgl.glfw.GLFW;
 public class KeyBinds {
     private static final KeyBinding.Category CATEGORY = KeyBinding.Category.create(PaladiClient.identifier("paladi-client"));
 
-    public static KeyBinding OPEN_GUI = new KeyBinding("key.paladi-client.open-gui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, CATEGORY);
+    public static final boolean IS_DAWN = checkIsDawn();
+
+    public static KeyBinding OPEN_GUI = new KeyBinding("key.paladi-client.open-gui", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_CONTROL, CATEGORY);
     public static KeyBinding OPEN_COMMANDS = new KeyBinding("key.paladi-client.open-commands", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_PERIOD, CATEGORY);
 
     private KeyBinds() {
+    }
+
+    public static boolean checkIsDawn() {
+        try {
+            // Check game directory (e.g. .dawn/profiles/...)
+            String gameDir = FabricLoader.getInstance().getGameDir().toAbsolutePath().toString().toLowerCase();
+            if (gameDir.contains(".dawn") || gameDir.contains("dawn")) return true;
+
+            // Check working directory
+            String userDir = System.getProperty("user.dir", "").toLowerCase();
+            if (userDir.contains(".dawn") || userDir.contains("dawn")) return true;
+
+            // Check loaded mods
+            for (var mod : FabricLoader.getInstance().getAllMods()) {
+                String id = mod.getMetadata().getId().toLowerCase();
+                String name = mod.getMetadata().getName().toLowerCase();
+                if (id.contains("dawn") || name.contains("dawn")) return true;
+            }
+
+            // Check system properties
+            for (String key : System.getProperties().stringPropertyNames()) {
+                if (key.toLowerCase().contains("dawn")) return true;
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    public static int getDefaultGuiKey() {
+        return GLFW.GLFW_KEY_RIGHT_CONTROL;
     }
 
     public static KeyBinding[] apply(KeyBinding[] binds) {

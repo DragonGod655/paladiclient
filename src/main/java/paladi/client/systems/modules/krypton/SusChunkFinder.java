@@ -140,6 +140,13 @@ public class SusChunkFinder extends Module {
         .build()
     );
 
+    private final Setting<Boolean> maxLoadChunk = sgGeneral.add(new BoolSetting.Builder()
+        .name("max-load-chunk")
+        .description("Tự động chỉnh Render Distance và Simulation Distance lên tối đa (32 chunks) khi bật module.")
+        .defaultValue(true)
+        .build()
+    );
+
     // Filters / Detectors List
     private final Setting<Boolean> storage = sgFilters.add(new BoolSetting.Builder()
         .name("storage-containers")
@@ -150,7 +157,7 @@ public class SusChunkFinder extends Module {
 
     private final Setting<Boolean> amethyst = sgFilters.add(new BoolSetting.Builder()
         .name("amethyst-growth")
-        .description("Quét mầm Thạch anh phát triển (Amethyst Clusters & Buds mọc dài).")
+        .description("Quét chùm Thạch anh phát triển (Chỉ quét Amethyst Cluster).")
         .defaultValue(true)
         .build()
     );
@@ -222,6 +229,16 @@ public class SusChunkFinder extends Module {
     public void onActivate() {
         chunkCache.clear();
         lastChunk = null;
+        if (maxLoadChunk.get() && mc.options != null) {
+            try {
+                if (mc.options.getViewDistance() != null) {
+                    mc.options.getViewDistance().setValue(32);
+                }
+                if (mc.options.getSimulationDistance() != null) {
+                    mc.options.getSimulationDistance().setValue(32);
+                }
+            } catch (Exception ignored) {}
+        }
         rescanLoadedChunks();
     }
 
@@ -248,7 +265,7 @@ public class SusChunkFinder extends Module {
         WButton help = theme.button("Help (Huong Dan)");
         help.action = () -> {
             ChatUtils.sendMsg(Formatting.LIGHT_PURPLE, "--- Sus Chunk Finder (Krypton Edition) ---");
-            ChatUtils.sendMsg(Formatting.GRAY, "- Bật/tắt các loại thực vật & mầm phát triển (Amethyst, Kelp, Cave Vines, v.v.) trong mục Filters.");
+            ChatUtils.sendMsg(Formatting.GRAY, "- Bật/tắt các loại thực vật & mầm phát triển (Amethyst Cluster, Kelp, Cave Vines, v.v.) trong mục Filters.");
             ChatUtils.sendMsg(Formatting.GRAY, "- Chunk có dấu hiệu người chơi nạp/phát triển sẽ được tô " + Formatting.RED + "MẶT PHẲNG ĐỎ PHẲNG LÌ TRÊN MẶT ĐẤT" + Formatting.GRAY + ".");
         };
         return help;
@@ -370,16 +387,12 @@ public class SusChunkFinder extends Module {
 
                         BlockPos pos = new BlockPos(startX + x, worldY, startZ + z);
 
-                        // A. Thạch anh phát triển (Amethyst Growth)
+                        // A. Thạch anh phát triển (Amethyst Growth - Chỉ Amethyst Cluster)
                         if (amethyst.get() && isAmethystBlock(b)) {
                             detected = true;
-                            if (b == Blocks.AMETHYST_CLUSTER || b == Blocks.LARGE_AMETHYST_BUD) {
-                                score += 35;
-                            } else {
-                                score += 15;
-                            }
+                            score += 35;
                             if (targets.size() < 64) {
-                                targets.add(new SusTarget(pos, "Amethyst", new Color(190, 40, 255, 255)));
+                                targets.add(new SusTarget(pos, "Amethyst Cluster", new Color(190, 40, 255, 255)));
                             }
                         }
 
@@ -422,8 +435,7 @@ public class SusChunkFinder extends Module {
     }
 
     private boolean isAmethystBlock(Block b) {
-        return b == Blocks.AMETHYST_CLUSTER || b == Blocks.BUDDING_AMETHYST || b == Blocks.AMETHYST_BLOCK 
-            || b == Blocks.SMALL_AMETHYST_BUD || b == Blocks.MEDIUM_AMETHYST_BUD || b == Blocks.LARGE_AMETHYST_BUD;
+        return b == Blocks.AMETHYST_CLUSTER;
     }
 
     private void updateActionBar(ChunkPos pos, ChunkStats stats) {
@@ -526,7 +538,7 @@ public class SusChunkFinder extends Module {
         // 2. CÁC ĐIỂM THẠCH ANH (Chỉ vẽ Quả Cầu Tím Tròn 3D)
         if (stats.targets != null && !stats.targets.isEmpty()) {
             for (SusTarget target : stats.targets) {
-                if ("Amethyst".equals(target.name)) {
+                if ("Amethyst Cluster".equals(target.name) || "Amethyst".equals(target.name)) {
                     double cx = target.pos.getX() + 0.5;
                     double cy = target.pos.getY() + 0.5;
                     double cz = target.pos.getZ() + 0.5;

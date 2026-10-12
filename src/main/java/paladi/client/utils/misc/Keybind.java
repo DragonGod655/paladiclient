@@ -177,9 +177,14 @@ public class Keybind implements ISerializable<Keybind>, ICopyable<Keybind> {
 
     @Override
     public Keybind fromTag(NbtCompound tag) {
-        isKey = tag.getBoolean("isKey", false);
-        value = tag.getInt("value", 0);
-        modifiers = tag.getInt("modifiers", 0);
+        if (tag == null || tag.isEmpty()) {
+            reset();
+            return this;
+        }
+
+        isKey = !tag.contains("isKey") || tag.getBoolean("isKey", true);
+        value = tag.contains("value") ? tag.getInt("value", GLFW_KEY_UNKNOWN) : GLFW_KEY_UNKNOWN;
+        modifiers = tag.contains("modifiers") ? tag.getInt("modifiers", 0) : 0;
 
         return this;
     }

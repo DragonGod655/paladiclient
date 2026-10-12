@@ -150,13 +150,16 @@ public class Offhand extends Module {
 
     private boolean isTotemLocked() {
         AutoTotem autoTotem = Modules.get().get(AutoTotem.class);
-        if (autoTotem != null && autoTotem.isLocked()) return true;
+        if (autoTotem != null && autoTotem.isActive() && (autoTotem.isLocked() || mc.player.getOffHandStack().getItem() == Items.TOTEM_OF_UNDYING)) return true;
 
         KryptonAutoTotem kryptonAutoTotem = Modules.get().get(KryptonAutoTotem.class);
-        if (kryptonAutoTotem != null && kryptonAutoTotem.isLocked()) return true;
+        if (kryptonAutoTotem != null && kryptonAutoTotem.isActive() && (kryptonAutoTotem.isLocked() || mc.player.getOffHandStack().getItem() == Items.TOTEM_OF_UNDYING)) return true;
 
         TotemInventory totemInv = Modules.get().get(TotemInventory.class);
-        if (totemInv != null && totemInv.isLocked()) return true;
+        if (totemInv != null && totemInv.isActive() && (totemInv.isLocked() || mc.player.getOffHandStack().getItem() == Items.TOTEM_OF_UNDYING)) return true;
+
+        paladi.client.systems.modules.krypton.TotemOffhand totemOffhand = Modules.get().get(paladi.client.systems.modules.krypton.TotemOffhand.class);
+        if (totemOffhand != null && totemOffhand.isActive()) return true;
 
         return false;
     }

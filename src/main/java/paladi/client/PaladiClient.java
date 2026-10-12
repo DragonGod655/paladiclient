@@ -20,6 +20,7 @@ import paladi.client.systems.hud.screens.HudEditorScreen;
 import paladi.client.systems.modules.Categories;
 import paladi.client.systems.modules.Modules;
 import paladi.client.systems.modules.misc.DiscordPresence;
+import paladi.client.mixin.KeyBindingAccessor;
 import paladi.client.utils.PostInit;
 import paladi.client.utils.PreInit;
 import paladi.client.utils.ReflectInit;
@@ -37,6 +38,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +94,7 @@ public class PaladiClient implements ClientModInitializer {
             MixinEnvironment.getCurrentEnvironment().audit();
         }
 
-        LOG.info("Initializing {}", NAME);
+        LOG.info("Initializing {} [Environment: {}]", NAME, KeyBinds.IS_DAWN ? "Dawn" : "Standard");
 
         // Pre-load
         if (!FOLDER.exists()) {
@@ -139,6 +142,18 @@ public class PaladiClient implements ClientModInitializer {
         // Post init
         ReflectInit.init(PostInit.class);
 
+        paladi.client.autobuild.AutoBuildConfig.load();
+        PaladiClient.EVENT_BUS.subscribe(paladi.client.autobuild.hud.AutoBuildHUD.class);
+
+        // Đảm bảo phím mở GUI mặc định là Right Control (Ctrl phải), sửa lại nếu trước đó bị lưu Right Shift
+        try {
+            if (((paladi.client.mixin.KeyBindingAccessor) KeyBinds.OPEN_GUI).Paladi$getKey().getCode() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) {
+                KeyBinds.OPEN_GUI.setBoundKey(net.minecraft.client.util.InputUtil.Type.KEYSYM.createFromCode(org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL));
+                net.minecraft.client.option.KeyBinding.updateKeysByCode();
+            }
+        } catch (Throwable ignored) {
+        }
+
         // Save on shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             OnlinePlayers.leave();
@@ -152,12 +167,19 @@ public class PaladiClient implements ClientModInitializer {
         if (mc.currentScreen == null && mc.getOverlay() == null && KeyBinds.OPEN_COMMANDS.wasPressed()) {
             mc.setScreen(new ChatScreen(Config.get().prefix.get(), true));
         }
+        paladi.client.autobuild.controller.AutoBuildController.getInstance().onClientTick(mc);
     }
 
     @EventHandler
     private void onKey(KeyEvent event) {
         if (event.action == KeyAction.Press) {
-            if (KeyBinds.OPEN_GUI.matchesKey(event.input) || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) {
+            // Chỉ dùng Ctrl phải (Right Control) để mở GUI, bỏ qua hoàn toàn Shift và Left Ctrl
+            if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL
+                || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT
+                || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) return;
+
+            if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL
+                || KeyBinds.OPEN_GUI.matchesKey(event.input)) {
                 toggleGui();
             }
         }

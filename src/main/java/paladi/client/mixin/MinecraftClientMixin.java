@@ -29,7 +29,6 @@ import paladi.client.systems.modules.movement.GUIMove;
 import paladi.client.systems.modules.player.FastUse;
 import paladi.client.systems.modules.player.Multitask;
 import paladi.client.systems.modules.render.ESP;
-import paladi.client.systems.modules.world.HighwayBuilder;
 import paladi.client.utils.Utils;
 import paladi.client.utils.misc.CPSUtils;
 import paladi.client.utils.misc.PaladiStarscript;
@@ -130,7 +129,10 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
     @Inject(method = "doItemUse", at = @At("HEAD"), cancellable = true)
     private void onDoItemUseBeforeHands(CallbackInfo ci) {
         doItemUseCalled = true;
-        if (PaladiClient.EVENT_BUS.post(DoItemUseEvent.get()).isCancelled()) ci.cancel();
+        if (PaladiClient.EVENT_BUS.post(DoItemUseEvent.get()).isCancelled()) {
+            this.itemUseCooldown = 4;
+            ci.cancel();
+        }
     }
 
     @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;ZZ)V", at = @At("HEAD"))
@@ -212,18 +214,6 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
         return customTitle;
     }
 
-    // Have to add this condition if we want to draw back a bow using packets, without it getting cancelled by vanilla code
-    @WrapWithCondition(method = "handleInputEvents", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerInteractionManager;stopUsingItem(Lnet/minecraft/entity/player/PlayerEntity;)V"))
-    private boolean wrapStopUsing(ClientPlayerInteractionManager instance, PlayerEntity player) {
-        return HB$stopUsingItem();
-    }
-
-    @Unique
-    private boolean HB$stopUsingItem() {
-        if (Modules.get() == null) return true;
-        HighwayBuilder b = Modules.get().get(HighwayBuilder.class);
-        return b == null || !b.isActive() || !b.drawingBow;
-    }
 
     @Inject(method = "onResolutionChanged", at = @At("TAIL"))
     private void onResolutionChanged(CallbackInfo info) {
@@ -265,7 +255,7 @@ public abstract class MinecraftClientMixin implements IMinecraftClient {
     @Inject(method = "handleInputEvents", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerEntity;isUsingItem()Z", ordinal = 0, shift = At.Shift.BEFORE))
     private void handleInputEventsInjectStopUsingItem(CallbackInfo info) {
         if (Modules.get().get(Multitask.class).attackingEntities() && player.isUsingItem()) {
-            if (!options.useKey.isPressed() && HB$stopUsingItem()) interactionManager.stopUsingItem(player);
+            if (!options.useKey.isPressed()) interactionManager.stopUsingItem(player);
             //noinspection StatementWithEmptyBody
             while (options.useKey.wasPressed());
         }

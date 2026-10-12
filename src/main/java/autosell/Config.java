@@ -3,6 +3,8 @@ package autosell;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.List;
+import java.util.ArrayList;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,8 +28,11 @@ public class Config {
     public String guiTitleKeyword = "Sell";
     public boolean autoSync = true;
     public int requiredSlots = 36;
-    public String offlineKeyHash = "";
-    public String offlineHwidHash = "";
+    public int targetChestSlots = 45;
+    public int pauseAfterSales = 100; // Số sales để tạm nghỉ (0 = tắt)
+    public int pauseDurationSeconds = 10; // Số giây tạm nghỉ sau khi đạt mốc sales
+    public boolean blacklistProtectionEnabled = false;
+    public List<String> blacklistedPlayers = new java.util.ArrayList<>();
     public long offlineLicenseExpiresAt = 0L;
 
     public static Config get() {
@@ -50,9 +55,13 @@ public class Config {
         if (INSTANCE == null) {
             INSTANCE = new Config();
             save();
-        } else if (!INSTANCE.key.isBlank() && !INSTANCE.autoSync) {
-            INSTANCE.autoSync = true;
-            save();
+        } else {
+            if (INSTANCE.blacklistedPlayers == null) {
+                INSTANCE.blacklistedPlayers = new java.util.ArrayList<>();
+            }
+            if (!INSTANCE.key.isBlank() && !INSTANCE.autoSync) {
+                save();
+            }
         }
     }
 

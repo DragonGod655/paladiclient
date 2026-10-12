@@ -196,6 +196,14 @@ tasks {
 
         exclude("fabric.mod.json")
 
+        if (buildType == "autosell") {
+            exclude("paladi-client*.mixins.json")
+            exclude("paladi-client.accesswidener")
+            exclude("assets/paladi-client/**")
+        } else {
+            exclude("autosell.mixins.json")
+        }
+
         val buildNumber = providers.gradleProperty("build_number").getOrElse("")
         val commit = providers.gradleProperty("commit").getOrElse("")
         val minecraftVersion = libs.versions.minecraft.get()

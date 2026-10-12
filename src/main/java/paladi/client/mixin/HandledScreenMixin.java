@@ -24,6 +24,13 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.packet.c2s.play.SlotChangedStateC2SPacket;
+import net.minecraft.screen.CrafterScreenHandler;
+import net.minecraft.util.Formatting;
+import org.spongepowered.asm.mixin.Unique;
+import paladi.client.systems.modules.world.EasyPlacePlus;
+import paladi.client.systems.modules.misc.CrafterMemory;
+import paladi.client.utils.player.ChatUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -82,6 +89,123 @@ public abstract class HandledScreenMixin<T extends ScreenHandler> extends Screen
                     .size(40, 20)
                     .build()
             );
+        }
+
+        if (getScreenHandler() instanceof CrafterScreenHandler crafterHandler) {
+            initCrafterButtons(crafterHandler);
+        }
+    }
+
+    @Unique
+    private void initCrafterButtons(CrafterScreenHandler handler) {
+        // Nút PASTE (Dán Mẫu Đã Nhớ) ở trên đỉnh GUI
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("📋 Paste"), button -> {
+                EasyPlacePlus easyPlace = Modules.get().get(EasyPlacePlus.class);
+                if (easyPlace != null) {
+                    easyPlace.pasteToCurrentCrafter();
+                } else {
+                    applyCrafterSlots(handler, new boolean[9]);
+                }
+            })
+            .position(x, y - 22)
+            .size(54, 20)
+            .build()
+        );
+
+        // Nút COPY (Lưu Mẫu Đang Mở)
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("📥 Copy"), button -> {
+                EasyPlacePlus easyPlace = Modules.get().get(EasyPlacePlus.class);
+                CrafterMemory crafterMemory = Modules.get().get(CrafterMemory.class);
+                for (int i = 0; i < 9; i++) {
+                    boolean isEnabled = !handler.isSlotDisabled(i);
+                    if (easyPlace != null) easyPlace.crafterSlots[i].set(isEnabled);
+                    if (crafterMemory != null) crafterMemory.slots[i].set(isEnabled);
+                }
+                ChatUtils.sendMsg(Formatting.GREEN, "[Crafter] Đã lưu cấu hình 9 ô hiện tại vào bộ nhớ Paste!");
+            })
+            .position(x + 56, y - 22)
+            .size(54, 20)
+            .build()
+        );
+
+        // Sidebar Presets bên phải GUI (x + 180)
+        int rightX = x + 180;
+        int btnW = 96;
+        int btnH = 18;
+
+        // 1. Bone -> Meal (Chỉ mở ô giữa)
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("🎯 Bone ➔ Meal"), button -> {
+                boolean[] pattern = new boolean[] { true, true, true, true, false, true, true, true, true };
+                applyCrafterSlots(handler, pattern);
+                ChatUtils.sendMsg(Formatting.GREEN, "[Crafter] Đã chọn: Xương ➔ Bột Xương (Mở ô giữa)!");
+            })
+            .position(rightX, y + 4)
+            .size(btnW, btnH)
+            .build()
+        );
+
+        // 2. Bone Meal -> Bone Block (Mở cả 9 ô)
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("🔄 Bone Block"), button -> {
+                boolean[] pattern = new boolean[9]; // Mở cả 9 ô
+                applyCrafterSlots(handler, pattern);
+                ChatUtils.sendMsg(Formatting.GREEN, "[Crafter] Đã chọn: Bột Xương ➔ Khối Xương (Mở cả 9 ô)!");
+            })
+            .position(rightX, y + 24)
+            .size(btnW, btnH)
+            .build()
+        );
+
+        // 3. Mở Ô 1 Góc Trên
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("↖ Mở Ô 1 (Góc)"), button -> {
+                boolean[] pattern = new boolean[] { false, true, true, true, true, true, true, true, true };
+                applyCrafterSlots(handler, pattern);
+                ChatUtils.sendMsg(Formatting.GREEN, "[Crafter] Đã chọn: Mở ô góc trên bên trái!");
+            })
+            .position(rightX, y + 44)
+            .size(btnW, btnH)
+            .build()
+        );
+
+        // 4. Mở 4 Ô 2x2
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("🔲 Mở 4 Ô 2x2"), button -> {
+                boolean[] pattern = new boolean[] { false, false, true, false, false, true, true, true, true };
+                applyCrafterSlots(handler, pattern);
+                ChatUtils.sendMsg(Formatting.GREEN, "[Crafter] Đã chọn: Mở 4 ô 2x2!");
+            })
+            .position(rightX, y + 64)
+            .size(btnW, btnH)
+            .build()
+        );
+
+        // 5. Khóa Hết 9 Ô
+        addDrawableChild(
+            new ButtonWidget.Builder(Text.literal("❌ Khóa Hết"), button -> {
+                boolean[] pattern = new boolean[] { true, true, true, true, true, true, true, true, true };
+                applyCrafterSlots(handler, pattern);
+                ChatUtils.sendMsg(Formatting.RED, "[Crafter] Đã khóa toàn bộ 9 ô!");
+            })
+            .position(rightX, y + 84)
+            .size(btnW, btnH)
+            .build()
+        );
+    }
+
+    @Unique
+    private void applyCrafterSlots(CrafterScreenHandler handler, boolean[] desiredDisabled) {
+        if (mc.getNetworkHandler() == null || mc.player == null) return;
+        for (int i = 0; i < 9; i++) {
+            boolean shouldBeDisabled = desiredDisabled[i];
+            boolean shouldBeEnabled = !shouldBeDisabled;
+            if (handler.isSlotDisabled(i) != shouldBeDisabled) {
+                handler.setSlotEnabled(i, shouldBeEnabled);
+                mc.getNetworkHandler().sendPacket(new SlotChangedStateC2SPacket(i, handler.syncId, shouldBeEnabled));
+            }
         }
     }
 

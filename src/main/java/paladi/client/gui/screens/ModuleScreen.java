@@ -41,7 +41,10 @@ public class ModuleScreen extends WindowScreen {
 
     public ModuleScreen(GuiTheme theme, Module module) {
         super(theme, theme.favorite(module.favorite), module.title);
-        ((WFavorite) window.icon).action = () -> module.favorite = ((WFavorite) window.icon).checked;
+        ((WFavorite) window.icon).action = () -> {
+            module.favorite = ((WFavorite) window.icon).checked;
+            Modules.get().save();
+        };
 
         this.module = module;
     }
@@ -67,7 +70,8 @@ public class ModuleScreen extends WindowScreen {
             case "mace-swap": return "Doi nhanh sang Chuy (Mace).";
             case "spear-swap": return "Doi nhanh sang Dinh Ba (Trident).";
             case "anti-trap": return "Canh bao khi bi dich nhot/xay block bao quanh.";
-            case "auto-mine": return "Tu dong dao block dang nhin.";
+            case "auto-mine": return "Tu dong dao 3x3 theo dung schematic Litematica, theo tung layer.";
+            case "auto-mine-basic": return "Tu dong dao block dang nhin.";
             case "auto-loot": return "Tu hut do xin dang roi.";
             case "auto-tpa": return "Spam gui yeu cau TPA.";
             case "elytra-glide": return "Giup bay Elytra muot hon, ko bi roi dot ngot.";
@@ -141,14 +145,20 @@ public class ModuleScreen extends WindowScreen {
 
         tobr.add(theme.label("Toggle on bind release: "));
         WCheckbox tobrC = tobr.add(theme.checkbox(module.toggleOnBindRelease)).widget();
-        tobrC.action = () -> module.toggleOnBindRelease = tobrC.checked;
+        tobrC.action = () -> {
+            module.toggleOnBindRelease = tobrC.checked;
+            Modules.get().save();
+        };
 
         // Chat feedback
         WHorizontalList cf = section.add(theme.horizontalList()).widget();
 
         cf.add(theme.label("Chat Feedback: "));
         WCheckbox cfC = cf.add(theme.checkbox(module.chatFeedback)).widget();
-        cfC.action = () -> module.chatFeedback = cfC.checked;
+        cfC.action = () -> {
+            module.chatFeedback = cfC.checked;
+            Modules.get().save();
+        };
 
         add(theme.horizontalSeparator()).expandX();
 

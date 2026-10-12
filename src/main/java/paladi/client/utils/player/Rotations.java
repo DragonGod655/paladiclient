@@ -46,9 +46,9 @@ public class Rotations {
         PaladiClient.EVENT_BUS.subscribe(Rotations.class);
     }
 
-    public static void rotate(double yaw, double pitch, int priority, boolean clientSide, Runnable callback) {
+    public static void rotate(double yaw, double pitch, int priority, boolean clientSide, boolean hold, Runnable callback) {
         Rotation rotation = rotationPool.get();
-        rotation.set(yaw, pitch, priority, clientSide, callback);
+        rotation.set(yaw, pitch, priority, clientSide, hold, callback);
 
         int i = 0;
         for (; i < rotations.size(); i++) {
@@ -58,8 +58,12 @@ public class Rotations {
         rotations.add(i, rotation);
     }
 
+    public static void rotate(double yaw, double pitch, int priority, boolean clientSide, Runnable callback) {
+        rotate(yaw, pitch, priority, clientSide, true, callback);
+    }
+
     public static void rotate(double yaw, double pitch, int priority, Runnable callback) {
-        rotate(yaw, pitch, priority, false, callback);
+        rotate(yaw, pitch, priority, false, true, callback);
     }
 
     public static void rotate(double yaw, double pitch, Runnable callback) {
@@ -128,9 +132,15 @@ public class Rotations {
     private static void onSendMovementPacketsPost(SendMovementPacketsEvent.Post event) {
         if (!rotations.isEmpty()) {
             if (mc.getCameraEntity() == mc.player) {
-                rotations.get(i - 1).runCallback();
+                Rotation r = rotations.get(i - 1);
+                r.runCallback();
 
-                if (rotations.size() == 1) lastRotation = rotations.get(i - 1);
+                if (rotations.size() == 1 && r.hold) {
+                    lastRotation = r;
+                } else {
+                    if (rotations.size() == 1) rotationPool.free(r);
+                    if (lastRotation == null) rotating = false;
+                }
 
                 resetPreRotation();
             }
@@ -143,7 +153,7 @@ public class Rotations {
                 rotation.sendPacket();
                 if (rotation.clientSide) resetPreRotation();
 
-                if (i == rotations.size() - 1) lastRotation = rotation;
+                if (i == rotations.size() - 1 && rotation.hold) lastRotation = rotation;
                 else rotationPool.free(rotation);
             }
 
@@ -157,6 +167,14 @@ public class Rotations {
     private static void resetPreRotation() {
         mc.player.setYaw(preYaw);
         mc.player.setPitch(prePitch);
+    }
+
+    public static float getPreYaw() {
+        return preYaw;
+    }
+
+    public static float getPrePitch() {
+        return prePitch;
     }
 
     @EventHandler
@@ -225,13 +243,15 @@ public class Rotations {
         public double yaw, pitch;
         public int priority;
         public boolean clientSide;
+        public boolean hold;
         public Runnable callback;
 
-        public void set(double yaw, double pitch, int priority, boolean clientSide, Runnable callback) {
+        public void set(double yaw, double pitch, int priority, boolean clientSide, boolean hold, Runnable callback) {
             this.yaw = yaw;
             this.pitch = pitch;
             this.priority = priority;
             this.clientSide = clientSide;
+            this.hold = hold;
             this.callback = callback;
         }
 

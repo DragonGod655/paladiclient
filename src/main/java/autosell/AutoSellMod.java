@@ -47,7 +47,8 @@ public class AutoSellMod implements ClientModInitializer {
     private static long guiWaitDeadlineMs = 0;
     private static int guiRetries = 0;
     private static int lastSyncId = -1;
-    private static boolean wasChestFull = false;
+    private static long cooldownUntilMs = 0;
+    private static int lastCooldownSaleMilestone = 0;
 
     // Coordinate protection states
     private static double startX = 0;
@@ -125,9 +126,12 @@ public class AutoSellMod implements ClientModInitializer {
             nextAllowedSellTimeMs = 0;
             guiRetries = 0;
             lastSyncId = -1;
+            cooldownUntilMs = 0;
+            lastCooldownSaleMilestone = 0;
         } else {
             // info(Formatting.RED + "Tắt AutoSell!");
             state = SellState.IDLE;
+            cooldownUntilMs = 0;
         }
     }
 
@@ -151,8 +155,8 @@ public class AutoSellMod implements ClientModInitializer {
 
         if (!active) return;
 
-        // Bảo vệ tài khoản: Kiểm tra người chơi archivePedro
-        checkArchivePedroProtection();
+        // Bảo vệ tài khoản: Kiểm tra người chơi trong danh sách blacklist
+        checkPlayerBlacklistProtection();
 
         // 1. Tọa độ bảo vệ (Coordinates Protection)
         if (Config.get().autoCoordinatesEnabled && hasStartPos) {
@@ -164,6 +168,30 @@ public class AutoSellMod implements ClientModInitializer {
                 warning("Người chơi đã di chuyển, ngừng bán.");
                 toggle();
                 return;
+            }
+        }
+
+        // 1.5. Kiểm tra thời gian nghỉ sau khi đạt mốc 100 sales (tắt đợi 10s rồi sell tiếp)
+        if (cooldownUntilMs > 0) {
+            long remainingMs = cooldownUntilMs - System.currentTimeMillis();
+            if (remainingMs > 0) {
+                if (mc.player != null && mc.currentScreen instanceof GenericContainerScreen) {
+                    mc.player.closeHandledScreen();
+                }
+                return;
+            } else {
+                cooldownUntilMs = 0;
+                info("Đã hết " + Config.get().pauseDurationSeconds + "s nghỉ! Gửi lệnh sell tiếp.");
+                if (isInventoryFull()) {
+                    if (Config.get().sellMode.equalsIgnoreCase("Gui")) {
+                        state = SellState.SENDING_COMMAND;
+                    } else {
+                        mc.player.networkHandler.sendChatCommand(Config.get().sellCommand);
+                        antiSpamCooldown = Math.max(100, Config.get().sellCommandDelayTicks);
+                    }
+                } else {
+                    state = SellState.WAITING_INVENTORY_FULL_NO_GUI;
+                }
             }
         }
 
@@ -225,56 +253,41 @@ public class AutoSellMod implements ClientModInitializer {
                     }
 
                     int containerSize = handler.getRows() * 9;
-                    int maxAllowedChestSlots = (handler.getRows() - 1) * 9;
+                    int maxAllowed = (handler.getRows() - 1) * 9;
+                    int targetChestSlots = Math.min(Config.get().targetChestSlots, maxAllowed);
 
-                    // Kiểm tra xem 5 hàng đầu đã đầy chưa
-                    boolean chestSlotsFull = true;
-                    for (int i = 0; i < maxAllowedChestSlots; i++) {
-                        if (handler.getSlot(i).getStack().isEmpty()) {
-                            chestSlotsFull = false;
-                            break;
+                    // 1. Đếm số ô đã có đồ trong các ô chứa của rương (tối đa 45 ô đầu)
+                    int chestFilledSlots = 0;
+                    for (int i = 0; i < targetChestSlots; i++) {
+                        if (!handler.getSlot(i).getStack().isEmpty()) {
+                            chestFilledSlots++;
                         }
                     }
 
-                    boolean movedAny = false;
-                    if (!chestSlotsFull) {
-                        for (int i = containerSize; i < size; i++) {
-                            ItemStack stack = handler.getSlot(i).getStack();
-                            if (!stack.isEmpty() && !stack.isDamageable()) {
-                                net.minecraft.item.Item item = stack.getItem();
-                                int count = stack.getCount();
-                                sessionSoldItems.put(item, sessionSoldItems.getOrDefault(item, 0) + count);
+                    // 2. Chuyển đồ từ túi đồ của người chơi vào rương
+                    for (int i = containerSize; i < size; i++) {
+                        if (chestFilledSlots >= targetChestSlots) break;
 
-                                mc.interactionManager.clickSlot(handler.syncId, i, 0, SlotActionType.QUICK_MOVE, mc.player);
-                                movedAny = true;
-                            }
+                        ItemStack stack = handler.getSlot(i).getStack();
+                        if (!stack.isEmpty() && !stack.isDamageable()) {
+                            net.minecraft.item.Item item = stack.getItem();
+                            int count = stack.getCount();
+                            sessionSoldItems.put(item, sessionSoldItems.getOrDefault(item, 0) + count);
+
+                            mc.interactionManager.clickSlot(handler.syncId, i, 0, SlotActionType.QUICK_MOVE, mc.player);
+                            handler.getSlot(i).setStack(ItemStack.EMPTY);
+                            chestFilledSlots++;
                         }
                     }
 
-                    boolean stillHasItemsToSell = false;
-                    if (!chestSlotsFull) {
-                        for (int i = containerSize; i < size; i++) {
-                            ItemStack stack = handler.getSlot(i).getStack();
-                            if (!stack.isEmpty() && !stack.isDamageable()) {
-                                stillHasItemsToSell = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (movedAny && stillHasItemsToSell) {
+                    // 3. Kiểm tra xem rương đã đủ 45 ô chưa
+                    if (chestFilledSlots >= targetChestSlots) {
+                        setDelay(Config.get().sellDelayTicks * 50);
+                        state = SellState.CLICKING_SELL;
+                    } else {
+                        // Chưa đủ 45 ô -> giữ rương mở, chờ đồ tiếp tục rơi vào túi đồ
                         setDelay(Config.get().moveDelayTicks * 50);
                         state = SellState.MOVING_ITEMS;
-                    } else {
-                        wasChestFull = chestSlotsFull;
-                        if (chestSlotsFull) {
-                            setDelay(Config.get().sellDelayTicks * 50);
-                            state = SellState.CLICKING_SELL;
-                        } else {
-                            // Chưa đủ 45 ô -> Tiếp tục ở trạng thái MOVING_ITEMS và giữ rương mở để chờ đồ chảy vào
-                            setDelay(Config.get().moveDelayTicks * 50);
-                            state = SellState.MOVING_ITEMS;
-                        }
                     }
                 }
                 case CLICKING_SELL -> {
@@ -312,16 +325,16 @@ public class AutoSellMod implements ClientModInitializer {
                     }
 
                     sessionSoldItems.clear();
-                    setDelay(Config.get().sellDelayTicks * 50);
+                    setDelay(Math.max(100, Config.get().sellDelayTicks * 50));
                     state = SellState.WAITING_AFTER_SELL;
                 }
                 case WAITING_AFTER_SELL -> {
-                    nextAllowedSellTimeMs = System.currentTimeMillis() + (Config.get().sellDelayTicks * 50);
-                    if (mc.currentScreen instanceof GenericContainerScreen) {
-                        state = SellState.MOVING_ITEMS;
-                    } else {
-                        state = SellState.WAITING_INVENTORY_FULL_NO_GUI;
+                    checkSalesCooldown();
+                    nextAllowedSellTimeMs = System.currentTimeMillis() + 1000;
+                    if (mc.player != null && mc.currentScreen instanceof GenericContainerScreen) {
+                        mc.player.closeHandledScreen();
                     }
+                    state = SellState.WAITING_INVENTORY_FULL_NO_GUI;
                 }
                 case WAITING_INVENTORY_FULL_NO_GUI -> {
                     boolean readyToSell = System.currentTimeMillis() >= nextAllowedSellTimeMs;
@@ -397,7 +410,9 @@ public class AutoSellMod implements ClientModInitializer {
             info(prefix + " stats : Xem thống kê phiên bán hiện tại");
             info(prefix + " hud : Bật/Tắt hiển thị thống kê trên màn hình");
             info(prefix + " reset : Xóa dữ liệu thống kê phiên");
-            info(prefix + " limit <số_ô> : Thiết lập số ô đồ tối thiểu mới bán (mặc định: 45)");
+            info(prefix + " limit <số_ô> : Số ô túi đồ để mở bán (mặc định: 36)");
+            info(prefix + " chestlimit <số_ô> : Số ô rương để bấm bán (mặc định: 45)");
+            info(prefix + " pause <sales> <giây> : Tạm nghỉ sau X sales (mặc định: 100 10)");
             info(prefix + " reload : Nạp lại file cấu hình");
             return;
         }
@@ -472,16 +487,50 @@ public class AutoSellMod implements ClientModInitializer {
             }
             case "limit" -> {
                 if (args.length < 3) {
-                    info("Số ô yêu cầu hiện tại: " + Config.get().requiredSlots);
+                    info("Số ô túi đồ yêu cầu hiện tại: " + Config.get().requiredSlots);
                     return;
                 }
                 try {
                     int val = Integer.parseInt(args[2]);
                     Config.get().requiredSlots = val;
                     Config.save();
-                    info("Đã đổi số ô yêu cầu thành: " + val + " ô");
+                    info("Đã đổi số ô túi đồ yêu cầu thành: " + val + " ô");
                 } catch (Exception e) {
                     error("Số ô không hợp lệ!");
+                }
+            }
+            case "chestlimit", "chest" -> {
+                if (args.length < 3) {
+                    info("Số ô rương yêu cầu hiện tại: " + Config.get().targetChestSlots);
+                    return;
+                }
+                try {
+                    int val = Integer.parseInt(args[2]);
+                    Config.get().targetChestSlots = val;
+                    Config.save();
+                    info("Đã đổi số ô rương yêu cầu thành: " + val + " ô");
+                } catch (Exception e) {
+                    error("Số ô không hợp lệ!");
+                }
+            }
+            case "pause", "break" -> {
+                if (args.length < 3) {
+                    info("Tạm nghỉ hiện tại: sau " + Config.get().pauseAfterSales + " sales nghỉ " + Config.get().pauseDurationSeconds + "s");
+                    return;
+                }
+                try {
+                    int sales = Integer.parseInt(args[2]);
+                    int sec = (args.length >= 4) ? Integer.parseInt(args[3]) : 10;
+                    Config.get().pauseAfterSales = Math.max(0, sales);
+                    Config.get().pauseDurationSeconds = Math.max(1, sec);
+                    Config.save();
+                    if (sales > 0) {
+                        info("Đã thiết lập: Bán được " + sales + " sales sẽ tắt đợi " + sec + "s rồi sell tiếp!");
+                    } else {
+                        info("Đã tắt tính năng tạm nghỉ sau sales.");
+                    }
+                } catch (Exception e) {
+                    error("Cú pháp không hợp lệ! Vd: " + prefix + " pause 100 10");
                 }
             }
             case "reload" -> {
@@ -564,6 +613,7 @@ public class AutoSellMod implements ClientModInitializer {
     public static void recordSale(String chatMessage) {
         if (sessionStartTimeMs == 0) sessionStartTimeMs = System.currentTimeMillis();
         sessionSellCount++;
+        checkSalesCooldown();
 
         // Loại bỏ mã màu Minecraft
         String clean = chatMessage.replaceAll("(?i)\u00A7[0-9a-fk-or]", "").trim();
@@ -636,11 +686,27 @@ public class AutoSellMod implements ClientModInitializer {
         }
     }
 
+    public static void checkSalesCooldown() {
+        if (Config.get().pauseAfterSales > 0 && sessionSellCount > 0
+                && sessionSellCount % Config.get().pauseAfterSales == 0
+                && sessionSellCount != lastCooldownSaleMilestone) {
+            lastCooldownSaleMilestone = sessionSellCount;
+            cooldownUntilMs = System.currentTimeMillis() + (Config.get().pauseDurationSeconds * 1000L);
+            if (mc.player != null && mc.currentScreen instanceof GenericContainerScreen) {
+                mc.player.closeHandledScreen();
+            }
+            state = SellState.WAITING_INVENTORY_FULL_NO_GUI;
+            info("Đã bán được " + sessionSellCount + " sales! Tắt đợi " + Config.get().pauseDurationSeconds + "s rồi gửi lệnh sell tiếp...");
+        }
+    }
+
     public static void resetStats() {
         sessionTotalEarned = 0.0;
         sessionSellCount = 0;
         sessionStartTimeMs = System.currentTimeMillis();
         sessionSoldItems.clear();
+        cooldownUntilMs = 0;
+        lastCooldownSaleMilestone = 0;
     }
 
     public static void toggleHud() {
@@ -683,34 +749,40 @@ public class AutoSellMod implements ClientModInitializer {
 
         if (active) {
             String modeStr = Config.get().sellMode;
-            switch (state) {
-                case IDLE -> {
-                    asVal = "ON (" + modeStr + ")";
-                    asValColor = greenColor;
-                }
-                case SENDING_COMMAND -> {
-                    asVal = "SENDING (" + modeStr + ")";
-                    asValColor = aquaColor;
-                }
-                case WAITING_GUI -> {
-                    asVal = "WAITING GUI";
-                    asValColor = aquaColor;
-                }
-                case MOVING_ITEMS -> {
-                    asVal = "MOVING ITEMS";
-                    asValColor = aquaColor;
-                }
-                case CLICKING_SELL -> {
-                    asVal = "SELLING";
-                    asValColor = aquaColor;
-                }
-                case WAITING_AFTER_SELL -> {
-                    asVal = "PROCESSING";
-                    asValColor = aquaColor;
-                }
-                case WAITING_INVENTORY_FULL_NO_GUI -> {
-                    asVal = "WAITING INV FULL";
-                    asValColor = greenColor;
+            if (cooldownUntilMs > System.currentTimeMillis()) {
+                long secLeft = (cooldownUntilMs - System.currentTimeMillis() + 999) / 1000;
+                asVal = "COOLDOWN (" + secLeft + "s)";
+                asValColor = goldColor;
+            } else {
+                switch (state) {
+                    case IDLE -> {
+                        asVal = "ON (" + modeStr + ")";
+                        asValColor = greenColor;
+                    }
+                    case SENDING_COMMAND -> {
+                        asVal = "SENDING (" + modeStr + ")";
+                        asValColor = aquaColor;
+                    }
+                    case WAITING_GUI -> {
+                        asVal = "WAITING GUI";
+                        asValColor = aquaColor;
+                    }
+                    case MOVING_ITEMS -> {
+                        asVal = "MOVING ITEMS";
+                        asValColor = aquaColor;
+                    }
+                    case CLICKING_SELL -> {
+                        asVal = "SELLING";
+                        asValColor = aquaColor;
+                    }
+                    case WAITING_AFTER_SELL -> {
+                        asVal = "PROCESSING";
+                        asValColor = aquaColor;
+                    }
+                    case WAITING_INVENTORY_FULL_NO_GUI -> {
+                        asVal = "WAITING INV FULL";
+                        asValColor = greenColor;
+                    }
                 }
             }
         }
@@ -798,6 +870,25 @@ public class AutoSellMod implements ClientModInitializer {
         context.fill(x - 2, y - 2, x + w6 + 2, y + 9, 0x90000000);
         context.drawTextWithShadow(mc.textRenderer, invText, x, y, goldColor);
         context.drawTextWithShadow(mc.textRenderer, invVal, x + mc.textRenderer.getWidth(invText), y, invValColor);
+
+        // Dòng 7: Trạng thái rương bán khi mở GUI (Chest: X/45)
+        if (mc.currentScreen instanceof GenericContainerScreen screen) {
+            GenericContainerScreenHandler handler = screen.getScreenHandler();
+            int maxAllowed = (handler.getRows() - 1) * 9;
+            int targetSlots = Math.min(Config.get().targetChestSlots, maxAllowed);
+            int chestFilled = 0;
+            for (int i = 0; i < targetSlots; i++) {
+                if (!handler.getSlot(i).getStack().isEmpty()) chestFilled++;
+            }
+            y += 12;
+            String chestText = "Chest: ";
+            String chestVal = chestFilled + "/" + targetSlots;
+            int chestColor = (chestFilled >= targetSlots) ? greenColor : aquaColor;
+            int w7 = mc.textRenderer.getWidth(chestText) + mc.textRenderer.getWidth(chestVal);
+            context.fill(x - 2, y - 2, x + w7 + 2, y + 9, 0x90000000);
+            context.drawTextWithShadow(mc.textRenderer, chestText, x, y, goldColor);
+            context.drawTextWithShadow(mc.textRenderer, chestVal, x + mc.textRenderer.getWidth(chestText), y, chestColor);
+        }
     }
 
     private static String sec(String hex) {
@@ -817,31 +908,42 @@ public class AutoSellMod implements ClientModInitializer {
         }
     }
 
-    private static void checkArchivePedroProtection() {
+    private static void checkPlayerBlacklistProtection() {
         if (mc.getNetworkHandler() == null) return;
+        if (!Config.get().blacklistProtectionEnabled) return;
+        List<String> blacklist = Config.get().blacklistedPlayers;
+        if (blacklist == null || blacklist.isEmpty()) return;
 
         boolean found = false;
-        String targetName = sec("11130f090d1f3a230007000a"); // "archivePedro" giải mã động
+        String foundName = "";
 
         // 1. Quét danh sách Tab List
         for (net.minecraft.client.network.PlayerListEntry entry : mc.getNetworkHandler().getPlayerList()) {
             if (entry.getProfile() != null && entry.getProfile().name() != null) {
-                if (entry.getProfile().name().equalsIgnoreCase(targetName)) {
-                    found = true;
-                    break;
+                for (String b : blacklist) {
+                    if (b != null && !b.isBlank() && entry.getProfile().name().equalsIgnoreCase(b.trim())) {
+                        found = true;
+                        foundName = entry.getProfile().name();
+                        break;
+                    }
                 }
             }
+            if (found) break;
         }
 
         // 2. Quét thực thể xung quanh trong thế giới
         if (!found && mc.world != null) {
             for (net.minecraft.entity.player.PlayerEntity player : mc.world.getPlayers()) {
                 if (player.getGameProfile() != null && player.getGameProfile().name() != null) {
-                    if (player.getGameProfile().name().equalsIgnoreCase(targetName)) {
-                        found = true;
-                        break;
+                    for (String b : blacklist) {
+                        if (b != null && !b.isBlank() && player.getGameProfile().name().equalsIgnoreCase(b.trim())) {
+                            found = true;
+                            foundName = player.getGameProfile().name();
+                            break;
+                        }
                     }
                 }
+                if (found) break;
             }
         }
 
@@ -853,7 +955,7 @@ public class AutoSellMod implements ClientModInitializer {
             // Thực hiện ngắt kết nối game ngay lập tức
             if (mc.getNetworkHandler().getConnection() != null) {
                 mc.getNetworkHandler().getConnection().disconnect(
-                    net.minecraft.text.Text.literal("§cPhát hiện archivePedro online! Đã ngắt kết nối bảo vệ.")
+                    net.minecraft.text.Text.literal("§cPhát hiện " + foundName + " online! Đã ngắt kết nối bảo vệ.")
                 );
             }
         }

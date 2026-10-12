@@ -21,13 +21,16 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
+import paladi.client.utils.player.SlotUtils;
+import net.minecraft.screen.slot.SlotActionType;
+
 public class AutoTotem extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
     private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
         .name("mode")
         .description("Determines when to hold a totem, strict will always hold.")
-        .defaultValue(Mode.Smart)
+        .defaultValue(Mode.Strict)
         .build()
     );
 
@@ -42,17 +45,10 @@ public class AutoTotem extends Module {
     private final Setting<Integer> health = sgGeneral.add(new IntSetting.Builder()
         .name("health")
         .description("The health to hold a totem at.")
-        .defaultValue(10)
+        .defaultValue(14)
         .range(0, 36)
         .sliderMax(36)
         .visible(() -> mode.get() == Mode.Smart)
-        .build()
-    );
-
-    private final Setting<Boolean> hotbarFallback = sgGeneral.add(new BoolSetting.Builder()
-        .name("hotbar-fallback")
-        .description("Instantly switches mainhand hotbar slot to totem if offhand is not ready or when totem pops.")
-        .defaultValue(true)
         .build()
     );
 
@@ -84,15 +80,45 @@ public class AutoTotem extends Module {
     private int totems, ticks;
 
     public AutoTotem() {
-        super(Categories.Combat, "auto-totem", "Automatically equips a totem in your offhand with instant pop recovery.");
+        super(Categories.Combat, "auto-totem", "Tự động cầm Totem ở tay phụ (Offhand) bằng gói tin SWAP nguyên tử, chống 100% ghost totem.");
+    }
+
+    @Override
+    public void onActivate() {
+        ticks = delay.get();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     private void onTick(TickEvent.Pre event) {
-        doEquip();
+        if (mc.player == null || mc.world == null) return;
+        if (mc.player.currentScreenHandler != mc.player.playerScreenHandler) return;
+
+        FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
+        totems = result.count();
+
+        if (totems <= 0) {
+            locked = false;
+            return;
+        }
+
+        if (ticks >= delay.get()) {
+            boolean low = mc.player.getHealth() + mc.player.getAbsorptionAmount() - PlayerUtils.possibleHealthReductions(explosion.get(), fall.get()) <= health.get();
+            boolean ely = elytra.get() && mc.player.getEquippedStack(EquipmentSlot.CHEST).getItem() == Items.ELYTRA && mc.player.isGliding();
+
+            locked = mode.get() == Mode.Strict || (mode.get() == Mode.Smart && (low || ely));
+
+            if (locked && mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
+                equipTotemToOffhand(result);
+            }
+
+            ticks = 0;
+            return;
+        }
+
+        ticks++;
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGHEST)
     private void onReceivePacket(PacketEvent.Receive event) {
         if (mc.player == null || mc.world == null) return;
         if (!(event.packet instanceof EntityStatusS2CPacket p)) return;
@@ -101,51 +127,31 @@ public class AutoTotem extends Module {
         Entity entity = p.getEntity(mc.world);
         if (entity == null || !(entity.equals(mc.player))) return;
 
-        ticks = delay.get(); // Reset tick count so delay doesn't block immediate pop recovery
-
-        if (hotbarFallback.get()) {
-            FindItemResult hotbarTotem = InvUtils.findInHotbar(Items.TOTEM_OF_UNDYING);
-            if (hotbarTotem.found() && hotbarTotem.isHotbar()) {
-                InvUtils.swap(hotbarTotem.slot(), true);
-            }
+        ticks = delay.get();
+        if (mc.player.currentScreenHandler == mc.player.playerScreenHandler) {
+            FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
+            totems = result.count();
+            equipTotemToOffhand(result);
         }
-
-        doEquip();
     }
 
-    private void doEquip() {
-        if (mc.player == null) return;
+    private void equipTotemToOffhand(FindItemResult result) {
+        if (mc.player == null || !result.found() || result.isOffhand()) return;
 
-        FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
-        totems = result.count();
-
-        if (totems <= 0) {
-            locked = false;
-        } else if (ticks >= delay.get()) {
-            boolean low = mc.player.getHealth() + mc.player.getAbsorptionAmount() - PlayerUtils.possibleHealthReductions(explosion.get(), fall.get()) <= health.get();
-            boolean ely = elytra.get() && mc.player.getEquippedStack(EquipmentSlot.CHEST).getItem() == Items.ELYTRA && mc.player.isGliding();
-
-            locked = mode.get() == Mode.Strict || (mode.get() == Mode.Smart && (low || ely));
-
-            if (locked) {
-                // Emergency hotbar fallback while offhand is swapping or empty
-                if (hotbarFallback.get() && mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
-                    FindItemResult hotbarTotem = InvUtils.findInHotbar(Items.TOTEM_OF_UNDYING);
-                    if (hotbarTotem.found() && hotbarTotem.isHotbar()) {
-                        InvUtils.swap(hotbarTotem.slot(), true);
-                    }
-                }
-
-                if (mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
-                    InvUtils.move().from(result.slot()).toOffhand();
-                }
+        // Dọn sạch con trỏ chuột nếu trước đó bị dính ghost item lơ lửng
+        if (!mc.player.playerScreenHandler.getCursorStack().isEmpty()) {
+            FindItemResult empty = InvUtils.findEmpty();
+            if (empty.found()) {
+                mc.interactionManager.clickSlot(mc.player.playerScreenHandler.syncId, SlotUtils.indexToId(empty.slot()), 0, SlotActionType.PICKUP, mc.player);
             }
-
-            ticks = 0;
-            return;
         }
 
-        ticks++;
+        int slotId = SlotUtils.indexToId(result.slot());
+        if (slotId != -1) {
+            // Sử dụng cơ chế SWAP phím F chuẩn vanilla (button = 40)
+            // Đổi trực tiếp 1 packet nguyên tử, không nhấc chuột lên con trỏ -> không bao giờ bị ghost totem
+            mc.interactionManager.clickSlot(mc.player.playerScreenHandler.syncId, slotId, 40, SlotActionType.SWAP, mc.player);
+        }
     }
 
     public boolean isLocked() {

@@ -48,5 +48,13 @@ calcium_check/
 temp_glazed/
 old_theme.java
 dist/
+*.log
+diff.txt
+stat.txt
+easy_log.txt
+mixin_diff.txt
+/assets/
+/fabric.mod.json
+
 
 

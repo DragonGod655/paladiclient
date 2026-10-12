@@ -124,6 +124,9 @@ public class WKeybind extends WHorizontalList {
             Modules.get().setModuleToBind(null);
         }
         if (action != null) action.run();
+
+        // Auto save immediately upon changing or resetting keybind
+        Modules.get().save();
     }
 
     private void refreshLabel() {

@@ -39,6 +39,8 @@ public class Commands {
         add(new EnchantCommand());
         add(new FakePlayerCommand());
         add(new FriendsCommand());
+        add(new BlacklistCommand());
+        add(new RemoveCommand());
         add(new CommandsCommand());
         add(new InventoryCommand());
         add(new NbtCommand());
@@ -73,6 +75,7 @@ public class Commands {
         add(new ChibiCommand());
         add(new SmartPathCommand());
         add(new DawnCommand());
+        add(new AutoBuildCommand());
 
         COMMANDS.sort(Comparator.comparing(Command::getName));
 

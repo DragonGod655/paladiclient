@@ -58,6 +58,11 @@ public class FastUse extends Module {
     }
 
     public int getItemUseCooldown(ItemStack itemStack) {
+        // Không áp dụng FastUse lên các khối block khi EasyPlacePlus đang hoạt động để tránh xung đột và ghost block
+        if (paladi.client.systems.modules.Modules.get() != null && paladi.client.systems.modules.Modules.get().isActive(paladi.client.systems.modules.world.EasyPlacePlus.class)) {
+            if (itemStack.getItem() instanceof BlockItem) return 4;
+        }
+
         if (mode.get() == Mode.All || shouldWorkSome(itemStack)) {
             return cooldown.get();
         }

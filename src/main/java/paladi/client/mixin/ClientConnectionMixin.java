@@ -17,7 +17,6 @@ import paladi.client.events.packets.PacketEvent;
 import paladi.client.events.world.ServerConnectEndEvent;
 import paladi.client.systems.modules.Modules;
 import paladi.client.systems.modules.misc.AntiPacketKick;
-import paladi.client.systems.modules.world.HighwayBuilder;
 import paladi.client.systems.proxies.Proxies;
 import paladi.client.systems.proxies.Proxy;
 import net.minecraft.network.ClientConnection;
@@ -28,9 +27,7 @@ import net.minecraft.network.handler.PacketSizeLogger;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BundleS2CPacket;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -51,18 +48,6 @@ public abstract class ClientConnectionMixin {
                 if (PaladiClient.EVENT_BUS.post(new PacketEvent.Receive(it.next(), (ClientConnection) (Object) this)).isCancelled()) it.remove();
             }
         } else if (PaladiClient.EVENT_BUS.post(new PacketEvent.Receive(packet, (ClientConnection) (Object) this)).isCancelled()) ci.cancel();
-    }
-
-    @Inject(method = "disconnect(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
-    private void disconnect(Text disconnectReason, CallbackInfo ci) {
-        if (Modules.get() == null) return;
-        HighwayBuilder hb = Modules.get().get(HighwayBuilder.class);
-        if (hb != null && hb.isActive()) {
-            MutableText text = Text.literal("%n%n%s[%sHighway Builder%s] Statistics:%n".formatted(Formatting.GRAY, Formatting.BLUE, Formatting.GRAY));
-            text.append(hb.getStatsText());
-
-            ((MutableText) disconnectReason).append(text);
-        }
     }
 
     @Inject(method = "connect(Ljava/net/InetSocketAddress;Lnet/minecraft/network/NetworkingBackend;Lnet/minecraft/network/ClientConnection;)Lio/netty/channel/ChannelFuture;", at = @At("HEAD"))

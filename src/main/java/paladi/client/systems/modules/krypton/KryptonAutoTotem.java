@@ -1,13 +1,5 @@
 package paladi.client.systems.modules.krypton;
 
-import paladi.client.events.packets.PacketEvent;
-import paladi.client.events.world.TickEvent;
-import paladi.client.settings.*;
-import paladi.client.systems.modules.Categories;
-import paladi.client.systems.modules.Module;
-import paladi.client.utils.player.FindItemResult;
-import paladi.client.utils.player.InvUtils;
-import paladi.client.utils.player.PlayerUtils;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import net.minecraft.entity.Entity;
@@ -15,6 +7,20 @@ import net.minecraft.entity.EntityStatuses;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
+import net.minecraft.screen.slot.SlotActionType;
+import paladi.client.events.packets.PacketEvent;
+import paladi.client.events.world.TickEvent;
+import paladi.client.settings.BoolSetting;
+import paladi.client.settings.DoubleSetting;
+import paladi.client.settings.EnumSetting;
+import paladi.client.settings.Setting;
+import paladi.client.settings.SettingGroup;
+import paladi.client.systems.modules.Categories;
+import paladi.client.systems.modules.Module;
+import paladi.client.utils.player.FindItemResult;
+import paladi.client.utils.player.InvUtils;
+import paladi.client.utils.player.PlayerUtils;
+import paladi.client.utils.player.SlotUtils;
 
 public class KryptonAutoTotem extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -22,17 +28,24 @@ public class KryptonAutoTotem extends Module {
     private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
         .name("mode")
         .description("Determines when to hold a totem, strict will always hold.")
-        .defaultValue(Mode.Smart)
+        .defaultValue(Mode.Strict)
         .build()
     );
 
     private final Setting<Double> health = sgGeneral.add(new DoubleSetting.Builder()
         .name("health")
         .description("Health threshold to swap to totem.")
-        .defaultValue(10.0)
+        .defaultValue(14.0)
         .min(1)
         .sliderMax(20)
         .visible(() -> mode.get() == Mode.Smart)
+        .build()
+    );
+
+    private final Setting<Boolean> fastSwap = sgGeneral.add(new BoolSetting.Builder()
+        .name("fast-packet-swap")
+        .description("Uses instant vanilla offhand swap packet when totem is in hotbar (0ms, bypasses ghost items).")
+        .defaultValue(true)
         .build()
     );
 
@@ -93,20 +106,16 @@ public class KryptonAutoTotem extends Module {
         Entity entity = p.getEntity(mc.world);
         if (entity == null || !entity.equals(mc.player)) return;
 
-        // Instant packet response: Emergency swap hotbar if available
-        if (hotbarFallback.get()) {
-            FindItemResult hotbarTotem = InvUtils.findInHotbar(Items.TOTEM_OF_UNDYING);
-            if (hotbarTotem.found() && hotbarTotem.isHotbar()) {
-                InvUtils.swap(hotbarTotem.slot(), true);
-            }
+        if (mc.player.currentScreenHandler == mc.player.playerScreenHandler) {
+            FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
+            totems = result.count();
+            equipTotemToOffhand(result);
         }
-
-        // Force immediate totem update on packet receive
-        updateTotemEquip();
     }
 
     private void updateTotemEquip() {
-        if (mc.player == null) return;
+        if (mc.player == null || mc.world == null) return;
+        if (mc.player.currentScreenHandler != mc.player.playerScreenHandler) return;
 
         FindItemResult result = InvUtils.find(Items.TOTEM_OF_UNDYING);
         totems = result.count();
@@ -123,19 +132,24 @@ public class KryptonAutoTotem extends Module {
 
         locked = mode.get() == Mode.Strict || (mode.get() == Mode.Smart && (low || ely));
 
-        if (locked) {
-            // Hotbar emergency mainhand protection while offhand is empty/swapping
-            if (hotbarFallback.get() && mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
-                FindItemResult hotbarTotem = InvUtils.findInHotbar(Items.TOTEM_OF_UNDYING);
-                if (hotbarTotem.found() && hotbarTotem.isHotbar()) {
-                    InvUtils.swap(hotbarTotem.slot(), true);
-                }
-            }
+        if (locked && mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
+            equipTotemToOffhand(result);
+        }
+    }
 
-            // Move totem to offhand
-            if (mc.player.getOffHandStack().getItem() != Items.TOTEM_OF_UNDYING) {
-                InvUtils.move().from(result.slot()).toOffhand();
+    private void equipTotemToOffhand(FindItemResult result) {
+        if (mc.player == null || !result.found() || result.isOffhand()) return;
+
+        if (!mc.player.playerScreenHandler.getCursorStack().isEmpty()) {
+            FindItemResult empty = InvUtils.findEmpty();
+            if (empty.found()) {
+                mc.interactionManager.clickSlot(mc.player.playerScreenHandler.syncId, SlotUtils.indexToId(empty.slot()), 0, SlotActionType.PICKUP, mc.player);
             }
+        }
+
+        int slotId = SlotUtils.indexToId(result.slot());
+        if (slotId != -1) {
+            mc.interactionManager.clickSlot(mc.player.playerScreenHandler.syncId, slotId, 40, SlotActionType.SWAP, mc.player);
         }
     }
 
