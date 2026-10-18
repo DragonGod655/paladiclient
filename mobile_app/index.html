@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IUNO SHOP - All-in-One Controller & Payouts</title>
+    <link rel="icon" href="/iuno_bg.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.94);
+            --border-subtle: #f1f5f9;
+            --border-card: #e2e8f0;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --text-sub: #94a3b8;
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --primary-blue-light: #eff6ff;
+            --accent-green: #10b981;
+            --accent-green-light: #dcfce7;
+            --accent-gold: #f59e0b;
+            --badge-purple-bg: #f5f3ff;
+            --badge-purple-text: #7c3aed;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            background-image: linear-gradient(rgba(248, 250, 252, 0.82), rgba(248, 250, 252, 0.86)), url('/iuno_bg.png');
+            background-size: cover;
+            background-position: center 30%;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: var(--text-body);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* SIDEBAR                                                            */
+        /* ------------------------------------------------------------------ */
+        .sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border-card);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: transform 0.25s ease;
+        }
+
+        .sidebar-top {
+            padding: 20px 16px;
+            overflow-y: auto;
+            max-height: calc(100vh - 90px);
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+            padding-left: 4px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: url('/iuno_bg.png') center 18%/cover no-repeat;
+            border-radius: 12px;
+            border: 2px solid var(--primary-blue);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            flex-shrink: 0;
+        }
+
+        .brand-info h1 {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--text-heading);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .brand-info span {
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-section-title {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--text-sub);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin: 14px 8px 6px 8px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .nav-item a, .nav-item button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: var(--radius-full);
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+        }
+
+        .nav-item a:hover, .nav-item button:hover {
+            background: #f1f5f9;
+            color: var(--text-heading);
+        }
+
+        .nav-item.active a, .nav-item.active button {
+            background: var(--primary-blue);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+        }
+
+        .nav-icon {
+            font-size: 1.15rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            flex-shrink: 0;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: var(--radius-full);
+            background: rgba(15, 23, 42, 0.08);
+            color: var(--text-muted);
+        }
+
+        .nav-item.active .nav-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        .sidebar-bottom {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .user-status-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            background: url('/iuno_bg.png') center 18%/cover no-repeat;
+            border: 2px solid #22c55e;
+            border-radius: var(--radius-full);
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: var(--text-heading);
+        }
+
+        .user-status {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #16a34a;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .user-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #16a34a;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: #22c55e;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* MAIN CONTENT AREA                                                  */
+        /* ------------------------------------------------------------------ */
+        .main-wrapper {
+            margin-left: 260px;
+            flex: 1;
+            padding: 24px 32px;
+            max-width: 1400px;
+            width: calc(100% - 260px);
+            transition: margin-left 0.25s ease, width 0.25s ease;
+        }
+
+        /* Mobile Header */
+        .mobile-header-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-card);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            margin: -24px -32px 16px -32px;
+        }
+
+        .btn-menu-toggle {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: var(--text-heading);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            flex: 1;
+            min-width: 280px;
+            max-width: 580px;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-sub);
+            font-size: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-full);
+            padding: 11px 18px 11px 44px;
+            font-size: 0.88rem;
+            color: var(--text-heading);
+            outline: none;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            background: #ffffff;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-top-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-card);
+            padding: 8px 14px;
+            border-radius: var(--radius-full);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-body);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-top-action:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .btn-top-action.primary {
+            background: var(--primary-blue);
+            color: #ffffff;
+            border-color: var(--primary-blue);
+        }
+
+        .btn-top-action.primary:hover {
+            background: var(--primary-blue-hover);
+        }
+
+        /* TAB PANELS */
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* PAYOUT SCHEDULE VIEW STYLES                                        */
+        /* ------------------------------------------------------------------ */
+        .filter-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 12px 18px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-card);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .date-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .date-filter-pill {
+            background: #f1f5f9;
+            border: 1px solid transparent;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .date-filter-pill:hover {
+            background: #e2e8f0;
+            color: var(--text-heading);
+        }
+
+        .date-filter-pill.active {
+            background: var(--primary-blue);
+            color: #ffffff;
+        }
+
+        .selection-actions-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .selection-counter {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            background: var(--primary-blue-light);
+            padding: 5px 12px;
+            border-radius: var(--radius-full);
+        }
+
+        .btn-selection-act {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-body);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+        }
+
+        .date-header-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-card);
+        }
+
+        .date-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-title-group h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-heading);
+        }
+
+        .badge-today {
+            background: var(--primary-blue);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        .date-summary-text {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-card);
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+        }
+
+        table.payout-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 820px;
+        }
+
+        table.payout-table th {
+            padding: 14px 16px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-card);
+            background: #ffffff;
+            user-select: none;
+        }
+
+        table.payout-table td {
+            padding: 16px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
+            font-size: 0.85rem;
+            transition: background 0.15s ease;
+        }
+
+        table.payout-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        table.payout-table tr.selected td {
+            background-color: #eff6ff;
+        }
+
+        .col-check {
+            width: 44px;
+            text-align: center;
+        }
+
+        .order-checkbox {
+            width: 17px;
+            height: 17px;
+            border-radius: 4px;
+            accent-color: var(--primary-blue);
+            cursor: pointer;
+        }
+
+        .col-est-time {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-heading);
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+        }
+
+        .col-start-time {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        .col-order-link {
+            font-weight: 700;
+            color: var(--primary-blue);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .order-qty {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        .col-buyer {
+            font-weight: 600;
+            color: var(--text-body);
+        }
+
+        .col-product {
+            color: var(--text-muted);
+        }
+
+        .col-amount {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-heading);
+            white-space: nowrap;
+        }
+
+        .basis-badge {
+            display: inline-block;
+            background: var(--badge-purple-bg);
+            color: var(--badge-purple-text);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .basis-badge.delivered {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .basis-date {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            margin-top: 3px;
+        }
+
+        .countdown-cell {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.84rem;
+            white-space: nowrap;
+        }
+
+        .countdown-cell.unlocked {
+            color: #16a34a;
+            font-weight: 800;
+            background: var(--accent-green-light);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            display: inline-block;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* PAY & BOT CONTROLLER VIEW STYLES                                   */
+        /* ------------------------------------------------------------------ */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title-group h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-heading);
+        }
+
+        .card-title-group span {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+
+        /* Account Pills Strip */
+        .acc-strip {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 16px;
+        }
+
+        .acc-pill-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-full);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-body);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .acc-pill-btn:hover {
+            border-color: var(--primary-blue);
+        }
+
+        .acc-pill-btn.active {
+            background: var(--primary-blue-light);
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .acc-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+
+        /* Pay Form */
+        .pay-form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .pay-form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .form-group-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-body);
+            margin-bottom: 6px;
+        }
+
+        .input-box-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-styled {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-heading);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-styled:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .input-btn-inner {
+            position: absolute;
+            right: 8px;
+            background: #f1f5f9;
+            border: none;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            cursor: pointer;
+        }
+
+        /* Chips for quick amount */
+        .amount-chips-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .chip-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .chip-btn:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            background: var(--primary-blue-light);
+        }
+
+        .cmd-preview-box {
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-pay-execute {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-size: 1.05rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-pay-execute:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+
+        .btn-pay-execute:active {
+            transform: scale(0.98);
+        }
+
+        /* Radar Players Grid */
+        .radar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .radar-player-card {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .radar-player-card:hover {
+            border-color: var(--primary-blue);
+            background: var(--primary-blue-light);
+            transform: translateY(-2px);
+        }
+
+        .radar-player-name {
+            font-weight: 700;
+            color: var(--text-heading);
+            font-size: 0.9rem;
+        }
+
+        .radar-player-dist {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.1);
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
+        }
+
+        /* Quick Chat Responses */
+        .quick-chat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-quick-chat {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-body);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+        }
+
+        .btn-quick-chat:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            background: #f8fafc;
+        }
+
+        /* Vitals Cards (Acc Management) */
+        .acc-vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .acc-vital-card {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .acc-vital-card.is-active {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px var(--primary-blue);
+        }
+
+        .vital-badge-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .vital-stat-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .vital-bar-fill-hp {
+            height: 100%;
+            background: #ef4444;
+            border-radius: var(--radius-full);
+        }
+
+        .vital-bar-fill-food {
+            height: 100%;
+            background: #f59e0b;
+            border-radius: var(--radius-full);
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 520px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-card);
+            overflow: hidden;
+            animation: modalPop 0.2s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-heading);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--text-sub);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-body);
+        }
+
+        .form-group input, .form-group textarea {
+            padding: 10px 14px;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-modal {
+            padding: 9px 18px;
+            border-radius: var(--radius-md);
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-modal.cancel {
+            background: #e2e8f0;
+            color: var(--text-body);
+        }
+
+        .btn-modal.save {
+            background: var(--primary-blue);
+            color: #ffffff;
+        }
+
+        /* Floating Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: all 0.25s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Responsive Mobile Layout */
+        @media (max-width: 900px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+                padding: 16px;
+            }
+
+            .mobile-header-bar {
+                display: flex;
+            }
+
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 95;
+            }
+
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Backdrop for mobile sidebar -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="app-sidebar">
+        <div class="sidebar-top">
+            <div class="brand-header">
+                <div class="brand-icon"></div>
+                <div class="brand-info">
+                    <h1>IUNO SHOP</h1>
+                    <span>All-in-One Controller</span>
+                </div>
+            </div>
+
+            <!-- BÁN HÀNG & ELDORADO -->
+            <div class="nav-section-title">BÁN HÀNG & ELDORADO</div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-tab="tab-payouts">
+                    <button type="button">
+                        <span class="nav-icon">⏱️</span>
+                        <span>Lịch tiền về</span>
+                        <span class="nav-badge" id="badge-payouts-count">0</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <a href="https://www.eldorado.gg/dashboard/orders/sold" target="_blank" title="Mở trang đơn hàng trên Eldorado">
+                        <span class="nav-icon">📋</span>
+                        <span>Orders (Eldorado)</span>
+                        <span style="margin-left: auto; font-size: 11px; opacity: 0.6;">↗</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://www.eldorado.gg/dashboard/offers" target="_blank" title="Mở sản phẩm trên Eldorado">
+                        <span class="nav-icon">🏷️</span>
+                        <span>Offers</span>
+                        <span style="margin-left: auto; font-size: 11px; opacity: 0.6;">↗</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-tab="tab-calc">
+                    <button type="button">
+                        <span class="nav-icon">🧮</span>
+                        <span>Tính lãi ròng</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- ĐIỀU KHIỂN BOT IN-GAME -->
+            <div class="nav-section-title">ĐIỀU KHIỂN BOT GAME</div>
+            <ul class="nav-menu">
+                <li class="nav-item" data-tab="tab-pay">
+                    <button type="button">
+                        <span class="nav-icon">💸</span>
+                        <span>Chuyển tiền (/pay)</span>
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="tab-radar">
+                    <button type="button">
+                        <span class="nav-icon">📡</span>
+                        <span>Radar & Chat khách</span>
+                        <span class="nav-badge" id="badge-radar-count">0</span>
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="tab-accounts">
+                    <button type="button">
+                        <span class="nav-icon">🎮</span>
+                        <span>Tài khoản Bot</span>
+                        <span class="nav-badge" id="badge-acc-count">0</span>
+                    </button>
+                </li>
+                <li class="nav-item" data-tab="tab-history">
+                    <button type="button">
+                        <span class="nav-icon">📜</span>
+                        <span>Lịch sử & Proof</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- HỆ THỐNG -->
+            <div class="nav-section-title">HỆ THỐNG</div>
+            <ul class="nav-menu">
+                <li class="nav-item" data-tab="tab-settings">
+                    <button type="button">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Cài đặt & Link 4G</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="user-status-card">
+                <div class="user-info-row">
+                    <div class="user-avatar"></div>
+                    <div class="user-details">
+                        <span class="user-name" id="sidebar-bot-name">Iuno Shop</span>
+                        <span class="user-status" id="sidebar-bot-status">Online (MultiMC)</span>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked id="toggle-bot-active">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-wrapper">
+        <!-- Mobile Top Header Bar -->
+        <div class="mobile-header-bar">
+            <button type="button" class="btn-menu-toggle" id="btn-mobile-menu">☰</button>
+            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-heading);">IUNO SHOP</div>
+            <div class="user-avatar" style="width: 32px; height: 32px;"></div>
+        </div>
+
+        <!-- Top Actions Bar -->
+        <div class="top-bar">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="search-input" placeholder="Tìm theo ID, buyer, sản phẩm...">
+            </div>
+
+            <div class="top-actions">
+                <div class="always-on-pill" style="display: flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.12); color: #16a34a; padding: 6px 14px; border-radius: var(--radius-full); font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(34, 197, 94, 0.3);">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+                    <span>24/7 Always-On (Vĩnh viễn)</span>
+                </div>
+                <button type="button" class="btn-top-action" id="btn-refresh-data">
+                    <span>🔄 Làm mới</span>
+                </button>
+                <button type="button" class="btn-top-action" id="btn-test-sound">
+                    <span>🔔 Test chuông</span>
+                </button>
+                <button type="button" class="btn-top-action primary" id="btn-quick-config">
+                    <span>⚙️ Cấu hình Eldorado API</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 1: PAYOUT SCHEDULE (Giao diện MT Store chuẩn 100%)       -->
+        <!-- ============================================================ -->
+        <div class="tab-panel active" id="tab-payouts">
+            <!-- Filter & Selection Bar -->
+            <div class="filter-controls-row">
+                <div class="date-filter-group">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-sub); margin-right: 4px;">LỌC NGÀY:</span>
+                    <button type="button" class="date-filter-pill active" data-filter="all">Tất cả ngày</button>
+                    <button type="button" class="date-filter-pill" data-filter="today">Hôm nay</button>
+                    <button type="button" class="date-filter-pill" data-filter="tomorrow">Ngày mai</button>
+                    <button type="button" class="date-filter-pill" data-filter="unlocked">Đã mở khóa (Tiền về)</button>
+                </div>
+
+                <div class="selection-actions-box" id="selection-bar" style="display: none;">
+                    <span class="selection-counter" id="selection-counter">Đã chọn: 0 đơn • 0.00 USD</span>
+                    <button type="button" class="btn-selection-act" id="btn-copy-selected-ids">📋 Chép ID đã chọn</button>
+                    <button type="button" class="btn-selection-act" id="btn-clear-selection">❌ Bỏ chọn</button>
+                </div>
+            </div>
+
+            <!-- Date Header Banner -->
+            <div class="date-header-card">
+                <div class="date-title-group">
+                    <h2 id="current-date-title">Chủ Nhật, 18/10/2026</h2>
+                    <span class="badge-today" id="badge-date-pill">Hôm nay</span>
+                </div>
+                <div class="date-summary-text" id="date-summary-info">
+                    15 đơn • 78.87 USD
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="payout-table">
+                    <thead>
+                        <tr>
+                            <th class="col-check">
+                                <input type="checkbox" id="check-all" class="order-checkbox" title="Chọn tất cả">
+                            </th>
+                            <th>GIỜ ƯỚC TÍNH</th>
+                            <th>NGÀY BẬT</th>
+                            <th>ORDER</th>
+                            <th>BUYER</th>
+                            <th>SẢN PHẨM</th>
+                            <th>GIÁ TRỊ</th>
+                            <th>CƠ SỞ TÍNH</th>
+                            <th>CÒN LẠI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payout-table-body">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 2: CHUYỂN TIỀN (/PAY)                                    -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-pay">
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>💸 LỆNH CHUYỂN TIỀN IN-GAME</h3>
+                        <span>Chọn acc chuyển tiền, nhập tên khách và số tiền cần giao</span>
+                    </div>
+                    <span id="pay-active-acc-badge" style="font-size: 0.82rem; font-weight: 800; color: #16a34a; background: #dcfce7; padding: 4px 12px; border-radius: var(--radius-full);">🟢 Bot: Chờ kết nối...</span>
+                </div>
+
+                <!-- Account Selector Strip -->
+                <div class="acc-strip" id="pay-acc-strip">
+                    <!-- Dynamic Account Pills -->
+                </div>
+
+                <div class="pay-form-grid">
+                    <div>
+                        <label class="form-group-label">Tên Người Chơi Nhận (Khách):</label>
+                        <div class="input-box-wrapper">
+                            <input type="text" class="input-styled" id="pay-target-input" placeholder="Ví dụ: Shedynek, PinkTool-JvWN...">
+                            <button type="button" class="input-btn-inner" id="btn-pick-radar-quick">📡 Chọn từ Radar</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-group-label">Số Tiền (Hỗ trợ k, m, b):</label>
+                        <div class="input-box-wrapper">
+                            <input type="text" class="input-styled" id="pay-amount-input" placeholder="Ví dụ: 40m, 100k, 1.5m...">
+                            <span id="amount-formatted-hint" style="position: absolute; right: 14px; font-size: 0.8rem; font-weight: 700; color: #10b981;"></span>
+                        </div>
+                        <div class="amount-chips-row">
+                            <button type="button" class="chip-btn" data-val="10M">10M</button>
+                            <button type="button" class="chip-btn" data-val="20M">20M</button>
+                            <button type="button" class="chip-btn" data-val="40M">40M</button>
+                            <button type="button" class="chip-btn" data-val="50M">50M</button>
+                            <button type="button" class="chip-btn" data-val="100M">100M</button>
+                            <button type="button" class="chip-btn" data-val="500M">500M</button>
+                            <button type="button" class="chip-btn" data-val="1B">1B</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Command Preview -->
+                <div class="cmd-preview-box">
+                    <span>LỆNH THỰC THI: <b id="pay-cmd-preview" style="color: #ffffff;">/pay ... ...</b></span>
+                    <span style="font-size: 0.75rem; color: #94a3b8;">Tự chụp ảnh Proof</span>
+                </div>
+
+                <button type="button" class="btn-pay-execute" id="btn-execute-pay">
+                    <span>💸 THỰC HIỆN CHUYỂN TIỀN & LƯU BẰNG CHỨNG</span>
+                </button>
+            </div>
+
+            <!-- Latest Proof Card -->
+            <div class="glass-card" id="latest-proof-card" style="display: none;">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>📸 BẰNG CHỨNG GIAO HÀNG VỪA CHỤP</h3>
+                        <span id="latest-proof-time">Thời gian: Vừa xong</span>
+                    </div>
+                    <a href="#" id="btn-download-latest-proof" download class="btn-selection-act">⬇️ Tải ảnh nộp Eldorado</a>
+                </div>
+                <div style="text-align: center;">
+                    <img id="latest-proof-img" src="" alt="Proof" style="max-width: 100%; border-radius: 10px; border: 1px solid var(--border-card); box-shadow: var(--shadow-sm); max-height: 380px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 3: RADAR & CHAT KHÁCH                                    -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-radar">
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>📡 RADAR NGƯỜI CHƠI GẦN BOT (64 BLOCKS)</h3>
+                        <span>Bấm vào bất kỳ người chơi nào để tự động chọn làm khách nhận tiền</span>
+                    </div>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-blue);" id="radar-live-count">0 người chơi xung quanh</span>
+                </div>
+                <div class="radar-grid" id="radar-players-container">
+                    <div style="grid-column: 1/-1; padding: 30px; text-align: center; color: var(--text-sub);">
+                        Không có người chơi nào trong phạm vi 64 block.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Chat Responses -->
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>💬 PHẢN HỒI NHANH VÀO GAME</h3>
+                        <span>1 chạm để gửi tin nhắn thông báo vào server Minecraft</span>
+                    </div>
+                </div>
+                <div class="quick-chat-grid">
+                    <button type="button" class="btn-quick-chat" data-msg="Đã pay cho bạn rồi nhé, kiểm tra giúp mình nha!">✅ Đã pay cho bạn rồi nhé, kiểm tra giúp mình nha!</button>
+                    <button type="button" class="btn-quick-chat" data-msg="Cảm ơn bạn đã mua hàng! Chúc bạn chơi vui vẻ nha.">🛒 Cảm ơn bạn đã mua hàng! Chúc bạn chơi vui vẻ.</button>
+                    <button type="button" class="btn-quick-chat" data-msg="Đợi mình 1 chút xíu đang chuẩn bị hàng nhé!">⏳ Đợi mình 1 chút xíu đang chuẩn bị hàng nhé!</button>
+                    <button type="button" class="btn-quick-chat" data-msg="Done trade! Nhớ ủng hộ shop Iuno tiếp nha!">🎉 Done trade! Nhớ ủng hộ shop Iuno tiếp nha!</button>
+                </div>
+                <div style="margin-top: 14px; display: flex; gap: 8px;">
+                    <input type="text" class="input-styled" id="custom-chat-input" placeholder="Gõ tin nhắn chat tự do vào server...">
+                    <button type="button" class="btn-top-action primary" id="btn-send-custom-chat" style="border-radius: var(--radius-md); padding: 0 20px;">Gửi Chat</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 4: QUẢN LÝ ACC GAME (MultiMC Accounts)                   -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-accounts">
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>🎮 CÁC ACC MINECRAFT ĐANG CHẠY (MULTIMC & DAWN)</h3>
+                        <span>Theo dõi máu, thức ăn, tọa độ và chuyển đổi bot điều khiển</span>
+                    </div>
+                </div>
+                <div class="acc-vitals-grid" id="accounts-cards-container">
+                    <!-- Dynamic Account Cards -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 5: LỊCH SỬ & PROOF                                       -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-history">
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>📜 LỊCH SỬ GIAO DỊCH & BẰNG CHỨNG</h3>
+                        <span>Toàn bộ các lệnh pay và ảnh chụp lưu trữ nộp bảo vệ đơn hàng</span>
+                    </div>
+                    <button type="button" class="btn-selection-act" id="btn-clear-history-view">Xóa danh sách</button>
+                </div>
+                <div id="history-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Dynamic History Items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 6: TÍNH LỢI NHUẬN                                       -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-calc">
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>🧮 BẢNG TÍNH LÃI RÒNG & PHÍ RÚT TIỀN ELDORADO</h3>
+                        <span>Tính trừ phí sàn (5%), cổng thanh toán (Skrill, Payoneer, SEPA, Crypto) và tỷ giá VND</span>
+                    </div>
+                </div>
+                <div class="pay-form-grid">
+                    <div>
+                        <label class="form-group-label">Giá Bán Đơn Hàng (USD):</label>
+                        <input type="number" class="input-styled" id="calc-usd-price" value="50.00" step="0.5">
+                    </div>
+                    <div>
+                        <label class="form-group-label">Cổng Rút Tiền:</label>
+                        <select class="input-styled" id="calc-method-select">
+                            <option value="skrill">🟣 Skrill (Phí 5% + $1)</option>
+                            <option value="payoneer">🟠 Payoneer (Phí 4% + $2)</option>
+                            <option value="sepa">🔵 SEPA Bank (Phí 4% + $5)</option>
+                            <option value="crypto">💲 Crypto USDC (Phí 6% + $20)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-group-label">Tỷ Giá Quy Đổi (VND/USD):</label>
+                        <input type="number" class="input-styled" id="calc-rate-vnd" value="25400" step="100">
+                    </div>
+                    <div>
+                        <label class="form-group-label">Tiền Thực Nhận (VND):</label>
+                        <div class="input-styled" id="calc-net-vnd" style="background: #ecfdf5; color: #059669; font-weight: 800; font-size: 1.15rem;">— VND</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 7: CÀI ĐẶT & LINK 4G                                     -->
+        <!-- ============================================================ -->
+        <div class="tab-panel" id="tab-settings">
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>📶 ĐƯỜNG TRUYỀN 4G TỪ XA (CLOUDFLARE TUNNEL)</h3>
+                        <span>Dùng link này để điều khiển toàn bộ web + bot từ điện thoại khi ra ngoài đường</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <div class="input-styled" id="display-4g-link" style="flex: 1; min-width: 260px; font-family: monospace; background: #f8fafc; color: var(--primary-blue);">Đang lấy link 4G...</div>
+                    <button type="button" class="btn-top-action primary" id="btn-copy-4g-link">📋 Sao Chép Link 4G</button>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>⚙️ KẾT NỐI MT STORE & ELDORADO</h3>
+                        <span>Cập nhật mã xác thực X-Shop-Creds để tự động đọc đơn</span>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div class="form-group">
+                        <label>Link MT Store (Render):</label>
+                        <input type="text" class="input-styled" id="cfg-settings-store-url" value="https://mt-store-4ry5.onrender.com">
+                    </div>
+                    <div class="form-group">
+                        <label>X-Shop-Creds:</label>
+                        <textarea class="input-styled" id="cfg-settings-creds" rows="3" placeholder="Dán mã x-shop-creds tại đây..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                            <input type="checkbox" id="cfg-settings-sound" checked style="width: 18px; height: 18px;">
+                            <span>Phát chuông âm thanh khi có tiền về</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                            <input type="checkbox" id="cfg-settings-toast" checked style="width: 18px; height: 18px;">
+                            <span>Thông báo đẩy Windows Toast</span>
+                        </label>
+                    </div>
+                    <button type="button" class="btn-top-action primary" id="btn-save-settings-page" style="width: 220px; padding: 12px; margin-top: 8px; border-radius: var(--radius-md);">
+                        💾 Lưu Cấu Hình Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Cấu hình Nhanh -->
+    <div class="modal-backdrop" id="modal-quick-cfg" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ Cấu Hình MT Store</h3>
+                <button type="button" class="modal-close" id="btn-close-quick-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>X-Shop-Creds:</label>
+                    <textarea class="input-styled" id="modal-quick-creds" rows="3" placeholder="Dán mã x-shop-creds..."></textarea>
+                    <small style="color: #64748b; font-size: 0.76rem; line-height: 1.4; margin-top: 4px;">
+                        💡 <b>Lấy nhanh:</b> Mở MT Store trên web ➔ F12 ➔ Console ➔ Chạy:<br>
+                        <code style="background: #f1f5f9; padding: 2px 4px; border-radius: 4px; color: #0f172a; display: block; margin-top: 3px;">copy(btoa(unescape(encodeURIComponent(localStorage.getItem('mtstore:shop-credentials')))))</code>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal cancel" id="btn-cancel-quick-modal">Hủy</button>
+                <button type="button" class="btn-modal save" id="btn-save-quick-modal">Lưu & Đồng Bộ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Notification -->
+    <div class="toast" id="toast-notify">
+        <span id="toast-icon">🚀</span>
+        <span id="toast-msg">Thông báo thành công!</span>
+    </div>
+
+    <script>
+        // Sample Eldorado Orders (Khớp ảnh 100% khi chưa điền API)
+        const SAMPLE_ORDERS = [
+            { orderId: "5321050d-...", qty: "x200", estTime: "21:45", startTime: "21:37 13/10/26", buyer: "GaudySteam-Lv61", product: "Money", amount: 2.10, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 21:45 13/10/26", remainingSec: 35040 },
+            { orderId: "15ab0aa3-...", qty: "x600", estTime: "21:45", startTime: "21:40 13/10/26", buyer: "PinkTool-JvWN", product: "Money", amount: 6.30, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 21:45 13/10/26", remainingSec: 35100 },
+            { orderId: "c57fa72b-...", qty: "x200", estTime: "21:47", startTime: "21:46 13/10/26", buyer: "EdgyBun-sKKa", product: "Money", amount: 2.10, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 21:47 13/10/26", remainingSec: 35160 },
+            { orderId: "d772d81a-...", qty: "x100", estTime: "22:16", startTime: "22:14 13/10/26", buyer: "RealOasis-858T", product: "Money", amount: 1.00, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:16 13/10/26", remainingSec: 36900 },
+            { orderId: "8f57657b-...", qty: "x142", estTime: "22:20", startTime: "22:19 13/10/26", buyer: "SilkyFlow-19UG", product: "Money", amount: 1.43, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:20 13/10/26", remainingSec: 37200 },
+            { orderId: "6fa1250d-...", qty: "x100", estTime: "22:21", startTime: "22:20 13/10/26", buyer: "SunnyPike-rjUE", product: "Money", amount: 1.01, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:21 13/10/26", remainingSec: 37260 },
+            { orderId: "8a57a83f-...", qty: "x400", estTime: "22:24", startTime: "22:20 13/10/26", buyer: "CozyPage-fzj1", product: "Money", amount: 4.49, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:24 13/10/26", remainingSec: 37380 },
+            { orderId: "b9c8be84-...", qty: "x3000", estTime: "22:26", startTime: "22:20 13/10/26", buyer: "SweetPitch-0Q1X", product: "Money", amount: 30.30, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:26 13/10/26", remainingSec: 37500 },
+            { orderId: "9074cc3a-...", qty: "x698", estTime: "22:30", startTime: "22:27 13/10/26", buyer: "KindDance-glgx", product: "Money", amount: 7.83, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:30 13/10/26", remainingSec: 37740 },
+            { orderId: "1ac4ae9b-...", qty: "x500", estTime: "22:32", startTime: "22:30 13/10/26", buyer: "ShinyBeam-V3Mg", product: "Money", amount: 5.61, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:32 13/10/26", remainingSec: 37860 },
+            { orderId: "1fdfbea2-...", qty: "x175", estTime: "22:56", startTime: "22:55 13/10/26", buyer: "ShinyLeap-cxFU", product: "Money", amount: 1.96, basis: "received", basisText: "Received +5 ngày", basisDate: "từ 22:56 13/10/26", remainingSec: 39300 }
+        ];
+
+        // State
+        let state = {
+            activeTab: 'tab-payouts',
+            orders: [],
+            selectedOrderIds: new Set(),
+            currentFilter: 'all',
+            searchQuery: '',
+            accounts: [],
+            selectedAccId: null,
+            nearbyPlayers: [],
+            publicUrl: '',
+            history: []
+        };
+
+        // Web Audio Chimes
+        const playSound = (type = 'success') => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                if (type === 'payout') {
+                    // Triumphant Cash Arpeggio
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.11);
+                        g.gain.setValueAtTime(0.2, now + idx * 0.11);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + (idx + 1) * 0.11 + 0.15);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.11);
+                        o.stop(now + (idx + 1) * 0.11 + 0.18);
+                    });
+                } else if (type === 'success') {
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.frequency.setValueAtTime(587.33, now);
+                    o.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                    g.gain.setValueAtTime(0.15, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    o.connect(g);
+                    g.connect(ctx.destination);
+                    o.start(now);
+                    o.stop(now + 0.25);
+                } else {
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.frequency.setValueAtTime(440, now);
+                    g.gain.setValueAtTime(0.05, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    o.connect(g);
+                    g.connect(ctx.destination);
+                    o.start(now);
+                    o.stop(now + 0.05);
+                }
+            } catch (e) {}
+        };
+
+        const toastEl = document.getElementById('toast-notify');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastMsg = document.getElementById('toast-msg');
+        let toastTimeout = null;
+
+        const showToast = (msg, icon = '🚀') => {
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastIcon.textContent = icon;
+            toastMsg.textContent = msg;
+            toastEl.classList.add('show');
+            toastTimeout = setTimeout(() => toastEl.classList.remove('show'), 2800);
+        };
+
+        // Navigation Tabs Switcher
+        const switchTab = (tabId) => {
+            state.activeTab = tabId;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.tab === tabId);
+            });
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.toggle('active', panel.id === tabId);
+            });
+            playSound('click');
+
+            // Close mobile menu if opened
+            document.getElementById('app-sidebar').classList.remove('mobile-open');
+            document.getElementById('sidebar-backdrop').classList.remove('show');
+        };
+
+        document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+            item.addEventListener('click', () => switchTab(item.dataset.tab));
+        });
+
+        // Mobile Menu Button
+        document.getElementById('btn-mobile-menu').addEventListener('click', () => {
+            document.getElementById('app-sidebar').classList.add('mobile-open');
+            document.getElementById('sidebar-backdrop').classList.add('show');
+        });
+        document.getElementById('sidebar-backdrop').addEventListener('click', () => {
+            document.getElementById('app-sidebar').classList.remove('mobile-open');
+            document.getElementById('sidebar-backdrop').classList.remove('show');
+        });
+
+        // ------------------------------------------------------------------
+        // TAB 1: PAYOUT SCHEDULE FUNCTIONS
+        // ------------------------------------------------------------------
+        const formatRemaining = (seconds) => {
+            if (seconds <= 0) return `<span class="countdown-cell unlocked">✅ TIỀN ĐÃ VỀ VÍ</span>`;
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) return `<span class="countdown-cell">còn ${h} giờ ${m} phút</span>`;
+            if (m > 0) return `<span class="countdown-cell" style="color: #ea580c;">còn ${m} phút ${s}s</span>`;
+            return `<span class="countdown-cell" style="color: #dc2626; font-weight: 800;">còn ${s} giây!</span>`;
+        };
+
+        const renderPayoutTable = () => {
+            const tableBody = document.getElementById('payout-table-body');
+            const query = (state.searchQuery || '').toLowerCase().trim();
+
+            const filtered = state.orders.filter(o => {
+                if (state.currentFilter === 'today' && o.remainingSec > 86400) return false;
+                if (state.currentFilter === 'unlocked' && o.remainingSec > 0) return false;
+                if (query) {
+                    const match = (
+                        (o.orderId && o.orderId.toLowerCase().includes(query)) ||
+                        (o.buyer && o.buyer.toLowerCase().includes(query)) ||
+                        (o.product && o.product.toLowerCase().includes(query)) ||
+                        (String(o.amount).includes(query))
+                    );
+                    if (!match) return false;
+                }
+                return true;
+            });
+
+            // Summary Info
+            const totalCount = filtered.length;
+            const totalAmount = filtered.reduce((acc, cur) => acc + (parseFloat(cur.amount) || 0), 0);
+            document.getElementById('date-summary-info').textContent = `${totalCount} đơn • ${totalAmount.toFixed(2)} USD`;
+            document.getElementById('badge-payouts-count').textContent = totalCount;
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="padding: 40px; text-align: center; color: var(--text-sub);">
+                            🔍 Không tìm thấy đơn hàng nào khớp với tìm kiếm.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = filtered.map(o => {
+                const isChecked = state.selectedOrderIds.has(o.orderId);
+                return `
+                    <tr class="${isChecked ? 'selected' : ''}" data-id="${o.orderId}">
+                        <td class="col-check">
+                            <input type="checkbox" class="order-checkbox row-check" data-id="${o.orderId}" ${isChecked ? 'checked' : ''}>
+                        </td>
+                        <td class="col-est-time">${o.estTime || '—'}</td>
+                        <td class="col-start-time">${o.startTime || '—'}</td>
+                        <td>
+                            <a href="javascript:void(0)" class="col-order-link" onclick="copyId('${o.orderId}')">${o.orderId}</a>
+                            <span class="order-qty">${o.qty || 'x1'}</span>
+                        </td>
+                        <td class="col-buyer">${o.buyer || 'Khách'}</td>
+                        <td class="col-product">${o.product || 'Money'}</td>
+                        <td class="col-amount">${typeof o.amount === 'number' ? o.amount.toFixed(2) : o.amount} USD</td>
+                        <td>
+                            <span class="basis-badge ${o.basis === 'delivered' ? 'delivered' : ''}">${o.basisText || 'Received +5 ngày'}</span>
+                            <span class="basis-date">${o.basisDate || ''}</span>
+                        </td>
+                        <td>${formatRemaining(o.remainingSec)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateSelectionUI();
+        };
+
+        const updateSelectionUI = () => {
+            const bar = document.getElementById('selection-bar');
+            const counter = document.getElementById('selection-counter');
+            const checkAll = document.getElementById('check-all');
+            const count = state.selectedOrderIds.size;
+
+            if (count > 0) {
+                bar.style.display = 'flex';
+                let sum = 0;
+                state.orders.forEach(o => {
+                    if (state.selectedOrderIds.has(o.orderId)) sum += (parseFloat(o.amount) || 0);
+                });
+                counter.textContent = `Đã chọn: ${count} đơn • ${sum.toFixed(2)} USD`;
+            } else {
+                bar.style.display = 'none';
+            }
+
+            const visibleChecks = document.querySelectorAll('.row-check');
+            checkAll.checked = visibleChecks.length > 0 && Array.from(visibleChecks).every(cb => cb.checked);
+        };
+
+        window.copyId = (id) => {
+            navigator.clipboard.writeText(id).then(() => showToast(`Đã chép ID: ${id}`, '📋'));
+        };
+
+        // Table Checkbox events
+        document.getElementById('payout-table-body').addEventListener('change', (e) => {
+            if (e.target.classList.contains('row-check')) {
+                const id = e.target.dataset.id;
+                const row = e.target.closest('tr');
+                if (e.target.checked) {
+                    state.selectedOrderIds.add(id);
+                    row.classList.add('selected');
+                } else {
+                    state.selectedOrderIds.delete(id);
+                    row.classList.remove('selected');
+                }
+                updateSelectionUI();
+            }
+        });
+
+        document.getElementById('check-all').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            document.querySelectorAll('.row-check').forEach(cb => {
+                cb.checked = checked;
+                const id = cb.dataset.id;
+                const row = cb.closest('tr');
+                if (checked) {
+                    state.selectedOrderIds.add(id);
+                    row.classList.add('selected');
+                } else {
+                    state.selectedOrderIds.delete(id);
+                    row.classList.remove('selected');
+                }
+            });
+            updateSelectionUI();
+        });
+
+        document.getElementById('btn-copy-selected-ids').addEventListener('click', () => {
+            if (state.selectedOrderIds.size === 0) return;
+            navigator.clipboard.writeText(Array.from(state.selectedOrderIds).join('\n')).then(() => {
+                showToast(`Đã sao chép ${state.selectedOrderIds.size} IDs vào clipboard!`, '📋');
+            });
+        });
+
+        document.getElementById('btn-clear-selection').addEventListener('click', () => {
+            state.selectedOrderIds.clear();
+            renderPayoutTable();
+            showToast('Đã bỏ chọn tất cả', '🧹');
+        });
+
+        // Date Filter Pills
+        document.querySelectorAll('.date-filter-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.date-filter-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                state.currentFilter = pill.dataset.filter;
+                renderPayoutTable();
+            });
+        });
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            state.searchQuery = e.target.value;
+            renderPayoutTable();
+        });
+
+        // ------------------------------------------------------------------
+        // TAB 2: PAY BOT IN-GAME FUNCTIONS
+        // ------------------------------------------------------------------
+        const targetInput = document.getElementById('pay-target-input');
+        const amountInput = document.getElementById('pay-amount-input');
+        const cmdPreview = document.getElementById('pay-cmd-preview');
+        const amountHint = document.getElementById('amount-formatted-hint');
+
+        const parseAmount = (val) => {
+            if (!val) return '';
+            let s = val.trim().toLowerCase();
+            let mult = 1;
+            if (s.endsWith('k')) { mult = 1000; s = s.slice(0, -1); }
+            else if (s.endsWith('m')) { mult = 1000000; s = s.slice(0, -1); }
+            else if (s.endsWith('b')) { mult = 1000000000; s = s.slice(0, -1); }
+            const num = parseFloat(s);
+            if (isNaN(num)) return val;
+            return (num * mult).toLocaleString('vi-VN');
+        };
+
+        const updateCmdPreview = () => {
+            const tgt = targetInput.value.trim() || '<người_chơi>';
+            const rawAmt = amountInput.value.trim() || '<số_tiền>';
+            const parsed = parseAmount(amountInput.value);
+            amountHint.textContent = parsed ? `(${parsed})` : '';
+            cmdPreview.textContent = `/pay ${tgt} ${rawAmt}`;
+        };
+
+        targetInput.addEventListener('input', updateCmdPreview);
+        amountInput.addEventListener('input', updateCmdPreview);
+
+        document.querySelectorAll('.chip-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                amountInput.value = btn.dataset.val;
+                updateCmdPreview();
+                playSound('click');
+            });
+        });
+
+        document.getElementById('btn-pick-radar-quick').addEventListener('click', () => {
+            switchTab('tab-radar');
+        });
+
+        document.getElementById('btn-execute-pay').addEventListener('click', async () => {
+            const tgt = targetInput.value.trim();
+            const amt = amountInput.value.trim();
+            if (!tgt || !amt) {
+                showToast('Vui lòng nhập tên người chơi và số tiền!', '⚠️');
+                return;
+            }
+
+            const activeAcc = state.accounts.find(a => String(a.id) === String(state.selectedAccId)) || state.accounts[0];
+            if (activeAcc && activeAcc.inGame === false) {
+                showToast(`Bot ${activeAcc.name} đang OFFLINE (chưa vào server)! Hãy mở game trước.`, '🛑');
+                return;
+            }
+
+            playSound('click');
+            showToast(`Đang thực hiện lệnh /pay ${tgt} ${amt}...`, '💸');
+
+            try {
+                const res = await fetch('/api/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target: tgt,
+                        amount: amt,
+                        mode: 'pay',
+                        acc: state.selectedAccId
+                    })
+                });
+                const d = await res.json();
+                if (d.success) {
+                    playSound('success');
+                    showToast(`Đã pay thành công cho ${tgt} (${amt})!`, '✅');
+                    if (d.proof) {
+                        document.getElementById('latest-proof-card').style.display = 'block';
+                        document.getElementById('latest-proof-img').src = d.proof.url + '?t=' + Date.now();
+                        document.getElementById('latest-proof-time').textContent = `Thời gian: ${d.proof.time || 'Vừa xong'} • Khách: ${tgt}`;
+                        document.getElementById('btn-download-latest-proof').href = d.proof.url + '?download=1';
+                    }
+                    targetInput.value = '';
+                    amountInput.value = '';
+                    updateCmdPreview();
+                } else {
+                    showToast(d.error || 'Lỗi khi pay tiền', '❌');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối tới máy chủ', '❌');
+            }
+        });
+
+        // ------------------------------------------------------------------
+        // TAB 3: RADAR & CHAT
+        // ------------------------------------------------------------------
+        const renderRadar = (players) => {
+            const container = document.getElementById('radar-players-container');
+            const countLabel = document.getElementById('radar-live-count');
+            const badgeCount = document.getElementById('badge-radar-count');
+
+            const count = players ? players.length : 0;
+            countLabel.textContent = `${count} người chơi xung quanh`;
+            badgeCount.textContent = count;
+
+            if (!players || players.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; padding: 30px; text-align: center; color: var(--text-sub);">
+                        Không có người chơi nào trong phạm vi 64 block.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = players.map(p => `
+                <div class="radar-player-card" onclick="selectRadarPlayer('${p.name}')">
+                    <span class="radar-player-name">👤 ${p.name}</span>
+                    <span class="radar-player-dist">${Math.round(p.distance)}m</span>
+                </div>
+            `).join('');
+        };
+
+        window.selectRadarPlayer = (name) => {
+            targetInput.value = name;
+            updateCmdPreview();
+            switchTab('tab-pay');
+            showToast(`Đã chọn khách: ${name}`, '🎯');
+        };
+
+        // Quick chat
+        document.querySelectorAll('.btn-quick-chat').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const msg = btn.dataset.msg;
+                playSound('click');
+                showToast(`Đang gửi chat: "${msg}"...`, '💬');
+                try {
+                    await fetch('/api/command', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: msg, acc: state.selectedAccId })
+                    });
+                    showToast('Đã gửi chat vào game thành công!', '✅');
+                } catch (e) {
+                    showToast('Lỗi gửi chat', '❌');
+                }
+            });
+        });
+
+        document.getElementById('btn-send-custom-chat').addEventListener('click', async () => {
+            const input = document.getElementById('custom-chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            try {
+                await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: msg, acc: state.selectedAccId })
+                });
+                showToast(`Đã gửi: "${msg}"`, '✅');
+                input.value = '';
+            } catch (e) {
+                showToast('Lỗi gửi chat', '❌');
+            }
+        });
+
+        // ------------------------------------------------------------------
+        // TAB 4: QUẢN LÝ ACC GAME
+        // ------------------------------------------------------------------
+        const renderAccounts = (accounts, activeId) => {
+            const strip = document.getElementById('pay-acc-strip');
+            const cardsContainer = document.getElementById('accounts-cards-container');
+            const badgeAccCount = document.getElementById('badge-acc-count');
+            const sidebarName = document.getElementById('sidebar-bot-name');
+            const payBadge = document.getElementById('pay-active-acc-badge');
+
+            const count = accounts ? accounts.length : 0;
+            badgeAccCount.textContent = count;
+
+            if (!accounts || accounts.length === 0) {
+                strip.innerHTML = '<span style="font-size: 0.8rem; color: #94a3b8;">Đang tìm Minecraft clients trong MultiMC/Dawn...</span>';
+                cardsContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px;">Chưa mở tài khoản game nào.</div>';
+                return;
+            }
+
+            const activeAcc = accounts.find(a => String(a.id) === String(activeId)) || accounts[0];
+            if (activeAcc) {
+                sidebarName.textContent = activeAcc.name;
+                payBadge.textContent = activeAcc.inGame ? `🟢 Bot: ${activeAcc.name} (${activeAcc.balance})` : `🔴 Bot: ${activeAcc.name} (OFFLINE)`;
+                payBadge.style.color = activeAcc.inGame ? '#16a34a' : '#dc2626';
+                payBadge.style.background = activeAcc.inGame ? '#dcfce7' : '#fee2e2';
+            }
+
+            // Render Strip
+            strip.innerHTML = accounts.map(a => `
+                <button type="button" class="acc-pill-btn ${String(a.id) === String(activeId) ? 'active' : ''}" onclick="selectAccount('${a.id}')">
+                    <span class="acc-status-dot" style="background: ${a.inGame ? '#22c55e' : '#ef4444'}"></span>
+                    <span>${a.name}</span>
+                    <small style="opacity: 0.7;">(${a.balance})</small>
+                </button>
+            `).join('');
+
+            // Render Full Cards
+            cardsContainer.innerHTML = accounts.map(a => `
+                <div class="acc-vital-card ${String(a.id) === String(activeId) ? 'is-active' : ''}">
+                    <div class="vital-badge-row">
+                        <span style="font-weight: 800; font-size: 1rem; color: var(--text-heading);">${a.name}</span>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: ${a.inGame ? '#16a34a' : '#ef4444'}; background: ${a.inGame ? '#dcfce7' : '#fee2e2'}; padding: 2px 8px; border-radius: var(--radius-full);">${a.inGame ? 'ONLINE' : 'OFFLINE'}</span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">
+                        Số dư: <b style="color: #10b981;">${a.balance}</b> • Server: <b>${a.server || 'Đã vào'}</b>
+                    </div>
+                    <button type="button" class="btn-top-action ${String(a.id) === String(activeId) ? 'primary' : ''}" style="width: 100%; justify-content: center; margin-top: 8px;" onclick="selectAccount('${a.id}')">
+                        ${String(a.id) === String(activeId) ? '✓ Đang điều khiển' : '🎮 Chuyển sang acc này'}
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        window.selectAccount = (id) => {
+            state.selectedAccId = id;
+            playSound('click');
+            renderAccounts(state.accounts, id);
+            showToast('Đã chọn tài khoản bot!', '🎮');
+        };
+
+        // ------------------------------------------------------------------
+        // TAB 6: CALCULATOR
+        // ------------------------------------------------------------------
+        const updateCalc = () => {
+            const price = parseFloat(document.getElementById('calc-usd-price').value) || 0;
+            const method = document.getElementById('calc-method-select').value;
+            const rate = parseFloat(document.getElementById('calc-rate-vnd').value) || 25400;
+
+            let pct = 0.05;
+            let flat = 1.0;
+            if (method === 'payoneer') { pct = 0.04; flat = 2.0; }
+            else if (method === 'sepa') { pct = 0.04; flat = 5.0; }
+            else if (method === 'crypto') { pct = 0.06; flat = 20.0; }
+
+            // Platform fee 5%
+            const afterPlatform = price * 0.95;
+            const afterWithdraw = Math.max(0, (afterPlatform * (1 - pct)) - flat);
+            const netVnd = afterWithdraw * rate;
+
+            document.getElementById('calc-net-vnd').textContent = `${Math.round(netVnd).toLocaleString('vi-VN')} VND ($${afterWithdraw.toFixed(2)})`;
+        };
+
+        document.getElementById('calc-usd-price').addEventListener('input', updateCalc);
+        document.getElementById('calc-method-select').addEventListener('change', updateCalc);
+        document.getElementById('calc-rate-vnd').addEventListener('input', updateCalc);
+        updateCalc();
+
+        // ------------------------------------------------------------------
+        // REAL-TIME DATA FETCHING & SYNCHRONIZATION
+        // ------------------------------------------------------------------
+        const fetchPayoutsData = async () => {
+            try {
+                const res = await fetch('/api/eldorado/payouts', { cache: 'no-store' });
+                const d = await res.json();
+                if (d.configured && Array.isArray(d.payouts)) {
+                    state.orders = d.payouts.map(p => ({
+                        orderId: p.orderId || p.order_id,
+                        qty: p.qty || (p.quantity ? `x${p.quantity}` : 'x1'),
+                        estTime: p.estTime || p.estimate_time || '—',
+                        startTime: p.startTime || p.base_date || '—',
+                        buyer: p.buyer || 'Unknown',
+                        product: p.product || 'Money',
+                        amount: parseFloat(p.amount) || 0,
+                        basis: p.basis || (p.base_state || 'Received').toLowerCase(),
+                        basisText: p.basisText || `${p.base_state || 'Received'} +5 ngày`,
+                        basisDate: p.basisDate || (p.base_date ? `từ ${p.base_date}` : ''),
+                        remainingSec: typeof p.remainingSec === 'number' ? p.remainingSec : (p.seconds_remaining || 0)
+                    }));
+                } else if (!state.orders || state.orders.length === 0) {
+                    state.orders = [...SAMPLE_ORDERS];
+                }
+                renderPayoutTable();
+            } catch (e) {
+                if (!state.orders || state.orders.length === 0) {
+                    state.orders = [...SAMPLE_ORDERS];
+                }
+                renderPayoutTable();
+            }
+        };
+
+        const fetchStatusData = async () => {
+            try {
+                const accParam = state.selectedAccId ? `?acc=${encodeURIComponent(state.selectedAccId)}` : '';
+                const res = await fetch(`/api/status${accParam}`, { cache: 'no-store' });
+                const data = await res.json();
+
+                if (Array.isArray(data.accounts)) {
+                    state.accounts = data.accounts;
+                    const activeId = data.activeAccountId || (data.accounts.length > 0 ? data.accounts[0].id : null);
+                    if (!state.selectedAccId || !data.accounts.some(a => String(a.id) === String(state.selectedAccId))) {
+                        state.selectedAccId = activeId;
+                    }
+                    renderAccounts(data.accounts, state.selectedAccId);
+                }
+
+                if (Array.isArray(data.nearbyPlayers)) {
+                    renderRadar(data.nearbyPlayers);
+                }
+
+                if (data.public_url) {
+                    state.publicUrl = data.public_url;
+                    document.getElementById('display-4g-link').textContent = data.public_url;
+                }
+            } catch (e) {}
+        };
+
+        const pollEvents = async () => {
+            try {
+                const res = await fetch('/api/eldorado/events', { cache: 'no-store' });
+                const data = await res.json();
+                if (data.ok && Array.isArray(data.events) && data.events.length > 0) {
+                    data.events.forEach(evt => {
+                        playSound('payout');
+                        showToast(`TIỀN ĐÃ VỀ VÍ! Đơn ${evt.orderId} (+${evt.amount} USD)`, '💰');
+                    });
+                    fetchPayoutsData();
+                }
+            } catch (e) {}
+        };
+
+        // Live countdown decrement tick every second
+        setInterval(() => {
+            let changed = false;
+            state.orders.forEach(o => {
+                if (o.remainingSec > 0) {
+                    o.remainingSec -= 1;
+                    changed = true;
+                }
+            });
+            if (changed && state.activeTab === 'tab-payouts') {
+                document.querySelectorAll('#payout-table-body tr').forEach(tr => {
+                    const id = tr.dataset.id;
+                    const item = state.orders.find(o => o.orderId === id);
+                    if (item) {
+                        const cell = tr.children[8];
+                        if (cell) cell.innerHTML = formatRemaining(item.remainingSec);
+                    }
+                });
+            }
+        }, 1000);
+
+        // Buttons
+        document.getElementById('btn-refresh-data').addEventListener('click', () => {
+            showToast('Đang làm mới dữ liệu Iuno Shop & Bot...', '🔄');
+            fetchPayoutsData();
+            fetchStatusData();
+        });
+
+        document.getElementById('btn-test-sound').addEventListener('click', async () => {
+            playSound('payout');
+            showToast('Đang test chuông báo tiền về...', '🔔');
+            try { await fetch('/api/eldorado/test-notify', { method: 'POST' }); } catch (e) {}
+        });
+
+        document.getElementById('btn-copy-4g-link').addEventListener('click', () => {
+            if (state.publicUrl) {
+                navigator.clipboard.writeText(state.publicUrl).then(() => {
+                    playSound('success');
+                    showToast('Đã sao chép link 4G Cloudflare!', '📋');
+                });
+            } else {
+                showToast('Chưa có link 4G', '⚠️');
+            }
+        });
+
+        // Quick Config Modal
+        const quickModal = document.getElementById('modal-quick-cfg');
+        const openQuickModal = async () => {
+            quickModal.style.display = 'flex';
+            try {
+                const res = await fetch('/api/eldorado/settings', { cache: 'no-store' });
+                const cfg = await res.json();
+                if (cfg.x_shop_creds) document.getElementById('modal-quick-creds').value = cfg.x_shop_creds;
+            } catch (e) {}
+        };
+        const closeQuickModal = () => quickModal.style.display = 'none';
+
+        document.getElementById('btn-quick-config').addEventListener('click', openQuickModal);
+        document.getElementById('btn-close-quick-modal').addEventListener('click', closeQuickModal);
+        document.getElementById('btn-cancel-quick-modal').addEventListener('click', closeQuickModal);
+
+        document.getElementById('btn-save-quick-modal').addEventListener('click', async () => {
+            const creds = document.getElementById('modal-quick-creds').value.trim();
+            try {
+                showToast('Đang lưu cấu hình...', '⏳');
+                await fetch('/api/eldorado/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x_shop_creds: creds })
+                });
+                showToast('Đã lưu cấu hình thành công!', '✅');
+                closeQuickModal();
+                fetchPayoutsData();
+            } catch (e) {
+                showToast('Lỗi lưu cấu hình', '❌');
+            }
+        });
+
+        // Save Settings Page
+        document.getElementById('btn-save-settings-page').addEventListener('click', async () => {
+            const storeUrl = document.getElementById('cfg-settings-store-url').value.trim();
+            const creds = document.getElementById('cfg-settings-creds').value.trim();
+            const sound = document.getElementById('cfg-settings-sound').checked;
+            const toast = document.getElementById('cfg-settings-toast').checked;
+
+            try {
+                showToast('Đang lưu cài đặt...', '⏳');
+                await fetch('/api/eldorado/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        store_url: storeUrl,
+                        x_shop_creds: creds,
+                        sound_enabled: sound,
+                        desktop_notify: toast
+                    })
+                });
+                showToast('Đã lưu cấu hình MT Store thành công!', '✅');
+                fetchPayoutsData();
+            } catch (e) {
+                showToast('Lỗi lưu cài đặt', '❌');
+            }
+        });
+
+        // Initial setup
+        renderPayoutTable();
+        fetchPayoutsData();
+        fetchStatusData();
+        setInterval(fetchStatusData, 1000);
+        setInterval(fetchPayoutsData, 60000);
+        setInterval(pollEvents, 6000);
+
+        // ------------------------------------------------------------------
+        // ALWAYS-ON 24/7 & ANTI-SLEEP PROTECTION
+        // ------------------------------------------------------------------
+        // 1. Chống vô tình đóng tab/trình duyệt
+        window.addEventListener('beforeunload', (e) => {
+            e.preventDefault();
+            e.returnValue = 'IUNO SHOP đang hoạt động 24/7 để giám sát tiền về Eldorado và điều khiển Bot. Bạn có chắc muốn rời đi?';
+            return e.returnValue;
+        });
+
+        // 2. Screen Wake Lock API (Giữ màn hình điện thoại & PC luôn sáng khi mở tab)
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        setTimeout(requestWakeLock, 1000);
+                    });
+                }
+            } catch (err) {}
+        };
+        requestWakeLock();
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') requestWakeLock();
+        });
+
+        // 3. Tự động phục hồi kết nối nếu mạng chập chờn
+        let lastPing = Date.now();
+        setInterval(() => {
+            const now = Date.now();
+            if (now - lastPing > 12000) {
+                // Vừa wake up từ sleep hoặc gián đoạn mạng
+                fetchPayoutsData();
+                fetchStatusData();
+            }
+            lastPing = now;
+        }, 2000);
+
+        window.addEventListener('online', () => {
+            showToast('Đã phục hồi kết nối mạng!', '📶');
+            fetchPayoutsData();
+            fetchStatusData();
+        });
+    </script>
+</body>
+</html>

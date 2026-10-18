@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: iuno-shop
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: ELDORADO_CLIENT_ID
+        value: 9dcffa15-088b-4eca-b8b1-6509abb25e3a
+      - key: ELDORADO_CLIENT_SECRET
+        value: PWAgwlExYqo_4WqG0gw007SAM5PsDwKUm8JgCdASWkM
+      - key: PYTHON_VERSION
+        value: 3.11.0
