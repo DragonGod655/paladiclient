@@ -1,7 +1,8 @@
-const CACHE_NAME = 'paladipay-v2.6';
+const CACHE_NAME = 'iuno-shop-v1.0';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
+    '/iuno_bg.png',
     '/style.css',
     '/app.js',
     '/manifest.json',

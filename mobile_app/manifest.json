@@ -1,12 +1,12 @@
 {
-  "name": "PaladiPay - Quản Lý Pay & Bán Hàng",
-  "short_name": "PaladiPay",
-  "description": "Điều khiển /pay bot Minecraft và tính lời bán hàng Eldorado trên di động",
+  "name": "IUNO SHOP - All-in-One Controller & Payouts",
+  "short_name": "IUNO SHOP",
+  "description": "Điều khiển bot Minecraft và theo dõi lịch tiền về Eldorado 24/7",
   "start_url": "/",
   "id": "/",
   "display": "standalone",
-  "background_color": "#090d16",
-  "theme_color": "#090d16",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
   "orientation": "portrait",
   "categories": ["utilities", "games", "finance"],
   "icons": [
