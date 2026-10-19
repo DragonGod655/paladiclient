@@ -311,32 +311,177 @@ def api_eldorado_settings():
 def api_eldorado_events():
     return jsonify({"events": ELDORADO_EVENTS, "total": len(ELDORADO_EVENTS)})
 
+# ----------------------------------------------------------------------
+# Multi-Account In-Game Tracking & Disconnect Log Inspector
+# ----------------------------------------------------------------------
+SAMPLE_BALANCE_HISTORY_12QC = [
+    {"time": "22:28:44", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:38", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:32", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:26", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:20", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:14", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:08", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:28:02", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:56", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:50", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:44", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:38", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:32", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:26", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:20", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:14", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"},
+    {"time": "22:27:08", "amount": "+$18.3K", "type": "Cộng tiền (AutoSell / Farm)", "note": "Ghi nhận biến động số dư từ server"}
+]
+
+SAMPLE_DISCONNECT_LOG_CAPTAIN = """[22:15:20] [Render thread/INFO]: Connecting to paladi.net, 25565
+[22:15:22] [Netty Client IO #3/INFO]: [CHAT] Welcome back, Captainsnake!
+[22:15:23] [Netty Client IO #3/INFO]: [CHAT] Balance: $18,124.50
+[22:15:30] [Netty Client IO #3/ERROR]: Internal Exception: java.net.SocketException: Connection reset
+	at java.base/sun.nio.ch.SocketDispatcher.read0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:46)
+	at java.base/sun.nio.ch.NioSocketImpl.tryRead(NioSocketImpl.java:256)
+	at java.base/sun.nio.ch.NioSocketImpl.implRead(NioSocketImpl.java:307)
+	at java.base/sun.nio.ch.NioSocketImpl.read(NioSocketImpl.java:346)
+	at java.base/sun.nio.ch.NioSocketImpl$1.read(NioSocketImpl.java:796)
+	at java.base/java.io.InputStream.read(InputStream.java:217)
+	at io.netty.buffer.ByteBufInputStream.read(ByteBufInputStream.java:146)
+	at net.minecraft.network.PacketByteBuf.readBytes(PacketByteBuf.java:230)
+[22:15:30] [Render thread/INFO]: Client disconnected from server: Connection reset
+[22:15:30] [Render thread/WARN]: Game session terminated abruptly by remote host."""
+
+CLOUD_ACCOUNTS_DATA = [
+    {
+        "id": "29388",
+        "port": 29388,
+        "name": "12qc",
+        "inGame": True,
+        "balance": "$18.1K",
+        "perHour": "$24.03M/h",
+        "totalEarned": "$54.46M",
+        "uptime": "02h 16m 00s",
+        "shards": "1.2K ★",
+        "shardsPerHour": "+3.4K/h",
+        "launcher": "PrismLauncher 1.21.11",
+        "server": "paladi.net",
+        "health": 20.0,
+        "maxHealth": 20.0,
+        "food": 20,
+        "disconnectInfo": {
+            "isDisconnected": False,
+            "reason": None,
+            "logFile": "C:\\Users\\Admin\\AppData\\Roaming\\PrismLauncher\\instances\\1.21.11\\.minecraft\\logs\\latest.log",
+            "logUrl": "/api/account/29388/log"
+        },
+        "balanceHistory": SAMPLE_BALANCE_HISTORY_12QC
+    },
+    {
+        "id": "29389",
+        "port": 29389,
+        "name": "Captainsnake",
+        "inGame": False,
+        "balance": "$18.1K",
+        "perHour": "$24.03M/h",
+        "totalEarned": "$54.46M",
+        "uptime": "02h 16m 00s",
+        "shards": "1.2K ★",
+        "shardsPerHour": "+3.4K/h",
+        "launcher": "Dawn Launcher",
+        "server": "paladi.net (Đã văng)",
+        "health": 20.0,
+        "maxHealth": 20.0,
+        "food": 20,
+        "disconnectInfo": {
+            "isDisconnected": True,
+            "reason": "Mất kết nối: Internal Exception: java.net.SocketException: Connection reset (Server ngắt kết nối đột ngột)",
+            "logFile": "C:\\Users\\Admin\\AppData\\Roaming\\.dawn\\profiles\\aha\\.minecraft\\logs\\latest.log",
+            "disconnectTime": "22:15:30 18/10/2026",
+            "logUrl": "/api/account/29389/log"
+        },
+        "balanceHistory": SAMPLE_BALANCE_HISTORY_12QC[:8]
+    },
+    {
+        "id": "29390",
+        "port": 29390,
+        "name": "Toby7554",
+        "inGame": False,
+        "balance": "0$",
+        "perHour": "$0/h",
+        "totalEarned": "$0",
+        "uptime": "00h 00m 00s",
+        "shards": "0 ★",
+        "shardsPerHour": "+0/h",
+        "launcher": "TLauncher",
+        "server": "Offline (Sảnh chờ)",
+        "health": 20.0,
+        "maxHealth": 20.0,
+        "food": 20,
+        "disconnectInfo": {
+            "isDisconnected": True,
+            "reason": "Chưa kết nối vào server (Đang ở sảnh chờ/Offline)",
+            "logFile": "C:\\Users\\Admin\\AppData\\Roaming\\.tlauncher\\legacy\\Minecraft\\game\\logs\\latest.log",
+            "disconnectTime": "22:00:10 18/10/2026",
+            "logUrl": "/api/account/29390/log"
+        },
+        "balanceHistory": []
+    }
+]
+
+@app.route("/api/account/<acc_id>/log", methods=["GET"])
+def api_account_log_route(acc_id):
+    """Chi tiết nhật ký log và nguyên nhân bot bị văng khỏi game"""
+    if str(acc_id) == "29389" or "captain" in str(acc_id).lower():
+        return jsonify({
+            "account_id": acc_id,
+            "port": 29389,
+            "launcher": "Dawn Launcher",
+            "log_file": "C:\\Users\\Admin\\AppData\\Roaming\\.dawn\\profiles\\aha\\.minecraft\\logs\\latest.log",
+            "disconnect_reason": "Mất kết nối: Internal Exception: java.net.SocketException: Connection reset (Server ngắt kết nối đột ngột)",
+            "log_snippet": SAMPLE_DISCONNECT_LOG_CAPTAIN
+        })
+    elif str(acc_id) == "29390" or "toby" in str(acc_id).lower():
+        return jsonify({
+            "account_id": acc_id,
+            "port": 29390,
+            "launcher": "TLauncher",
+            "log_file": "C:\\Users\\Admin\\AppData\\Roaming\\.tlauncher\\legacy\\Minecraft\\game\\logs\\latest.log",
+            "disconnect_reason": "Chưa kết nối vào server (Đang ở sảnh chờ/Offline)",
+            "log_snippet": "[22:00:10] [Render thread/INFO]: Game started in Singleplayer / Standby Mode.\n[22:00:12] [Render thread/INFO]: Waiting for user to connect to multiplayer server."
+        })
+    else:
+        return jsonify({
+            "account_id": acc_id,
+            "port": 29388,
+            "launcher": "PrismLauncher 1.21.11",
+            "log_file": "C:\\Users\\Admin\\AppData\\Roaming\\PrismLauncher\\instances\\1.21.11\\.minecraft\\logs\\latest.log",
+            "disconnect_reason": "Tài khoản đang ONLINE ổn định, không có lỗi văng game.",
+            "log_snippet": "\n".join([f"[{h['time']}] [Render thread/INFO]: [CHAT] Balance +$18.3K (AutoSell / Farm)" for h in SAMPLE_BALANCE_HISTORY_12QC[:10]])
+        })
+
 @app.route("/api/status", methods=["GET"])
 def api_bot_status():
+    acc_param = request.args.get("acc")
+    active_acc = CLOUD_ACCOUNTS_DATA[0]
+    if acc_param:
+        for a in CLOUD_ACCOUNTS_DATA:
+            if str(a["id"]) == str(acc_param):
+                active_acc = a
+                break
+
     return jsonify({
         "status": "online",
         "cloud_mode": True,
-        "gameConnected": True,
-        "accounts": [
-            {
-                "id": "cloud_store",
-                "name": "BestLegitStore (Cloud)",
-                "inGame": True,
-                "balance": "17.55 USD",
-                "server": "Eldorado Cloud 24/7",
-                "shards": "28 đơn",
-                "launcher": "Cloud Service"
-            }
-        ],
-        "activeAccountId": "cloud_store",
-        "totalAccounts": 1,
+        "gameConnected": active_acc.get("inGame", True),
+        "accounts": CLOUD_ACCOUNTS_DATA,
+        "activeAccountId": active_acc["id"],
+        "totalAccounts": len(CLOUD_ACCOUNTS_DATA),
         "player": {
-            "name": "BestLegitStore",
-            "health": 20.0,
+            "name": active_acc["name"],
+            "health": active_acc.get("health", 20.0),
             "maxHealth": 20.0,
-            "food": 20,
-            "server": "Eldorado Payouts",
-            "balance": "17.55 USD"
+            "food": active_acc.get("food", 20),
+            "server": active_acc.get("server", "paladi.net"),
+            "balance": active_acc.get("balance", "0$")
         },
         "nearbyEntities": [],
         "history": []

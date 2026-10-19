@@ -295,6 +295,72 @@ def get_launcher_for_port(port):
         pass
     return "MultiMC / Dawn"
 
+ACCOUNT_PERSISTENT_MEMORY = {}
+
+def get_launcher_log_path(launcher_name):
+    ln = (launcher_name or "").lower()
+    if "dawn" in ln:
+        p = Path.home() / "AppData" / "Roaming" / ".dawn" / "profiles" / "aha" / ".minecraft" / "logs" / "latest.log"
+        if p.exists(): return p
+    elif "tlauncher" in ln:
+        p = Path.home() / "AppData" / "Roaming" / ".tlauncher" / "legacy" / "Minecraft" / "game" / "logs" / "latest.log"
+        if p.exists(): return p
+    p1 = Path.home() / "AppData" / "Roaming" / "PrismLauncher" / "instances" / "1.21.11" / "minecraft" / "logs" / "latest.log"
+    if p1.exists(): return p1
+    p2 = Path.home() / "AppData" / "Roaming" / "PrismLauncher" / "instances" / "1.21.11" / ".minecraft" / "logs" / "latest.log"
+    if p2.exists(): return p2
+    return None
+
+def extract_balance_history(log_path):
+    if not log_path or not log_path.exists():
+        return []
+    history = []
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        for line in lines[-350:]:
+            m = re.search(r'\[(\d{2}:\d{2}:\d{2})\].*?\[CHAT\]\s*([+\-$]\s*[\d,.]+[KkMmBb]?)', line)
+            if m:
+                t, val = m.group(1), m.group(2).replace(" ", "")
+                history.append({
+                    "time": t,
+                    "amount": val,
+                    "type": "Cộng tiền (AutoSell / Farm)",
+                    "note": "Ghi nhận biến động số dư từ server"
+                })
+    except Exception:
+        pass
+    return list(reversed(history[-40:]))
+
+def extract_disconnect_reason(log_path):
+    if not log_path or not log_path.exists():
+        return "Chưa kết nối vào server (Đang ở sảnh chờ/Offline)", "Không tìm thấy file log Minecraft."
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        tail = lines[-35:]
+        reason = "Mất kết nối máy chủ / Client đóng"
+        for l in reversed(tail):
+            l_lower = l.lower()
+            if "throwconnectionreset" in l_lower or "connection reset" in l_lower:
+                reason = "Mất kết nối: Internal Exception: java.net.SocketException: Connection reset (Server ngắt kết nối đột ngột)"
+                break
+            elif "kicked by" in l_lower or "kicked:" in l_lower:
+                reason = "Bị đuổi khỏi server: " + l.strip()
+                break
+            elif "timed out" in l_lower or "connection lost" in l_lower:
+                reason = "Hết thời gian chờ phản hồi (Connection Timed Out)"
+                break
+            elif "disconnected from server" in l_lower:
+                reason = "Ngắt kết nối: " + l.strip()
+                break
+            elif "server closed" in l_lower:
+                reason = "Máy chủ đã đóng cửa / Khởi động lại (Server Closed)"
+                break
+        return reason, "".join(tail)
+    except Exception as e:
+        return f"Lỗi đọc log: {e}", ""
+
 def check_single_port(port):
     try:
         req = urllib.request.Request(f"http://127.0.0.1:{port}/api/status", headers={"User-Agent": "PaladiMobile/1.0"})
@@ -316,9 +382,71 @@ def check_single_port(port):
                 elif not data["player"].get("launcher") or data["player"]["launcher"] == "MultiMC":
                     if launcher_type != "MultiMC / Dawn":
                         data["player"]["launcher"] = launcher_type
+
+                log_file = get_launcher_log_path(launcher_type)
+                in_game = bool(data.get("inGame", True))
+
+                if port not in ACCOUNT_PERSISTENT_MEMORY:
+                    ACCOUNT_PERSISTENT_MEMORY[port] = {
+                        "lastKnownBalance": "0$",
+                        "lastKnownPerHour": "$0/h",
+                        "lastKnownTotal": "$0",
+                        "lastKnownShards": "0 ★",
+                        "lastKnownShardsPerHour": "+0/h",
+                        "lastKnownUptime": "00h 00m 00s",
+                        "balanceHistory": []
+                    }
+                mem = ACCOUNT_PERSISTENT_MEMORY[port]
+
+                # Update balance history from real log
+                log_history = extract_balance_history(log_file)
+                if log_history:
+                    mem["balanceHistory"] = log_history
+
+                player = data.get("player", {})
+                current_bal = player.get("balance", "0$")
+                if current_bal and current_bal != "0$":
+                    mem["lastKnownBalance"] = current_bal
+
+                earnings = data.get("earnings", {})
+                per_hour = earnings.get("perHourFormatted")
+                if per_hour and per_hour != "$0/h":
+                    mem["lastKnownPerHour"] = per_hour
+                    mem["lastKnownTotal"] = earnings.get("totalEarnedFormatted", "$0")
+                    mem["lastKnownUptime"] = earnings.get("uptimeFormatted", "00h 00m 00s")
+
+                shards = data.get("shards", {})
+                sh_per_h = shards.get("perHourFormatted")
+                if sh_per_h and sh_per_h != "+0/h":
+                    mem["lastKnownShards"] = shards.get("balanceFormatted", "0 ★")
+                    mem["lastKnownShardsPerHour"] = sh_per_h
+
+                if not in_game:
+                    reason, snippet = extract_disconnect_reason(log_file)
+                    data["disconnectInfo"] = {
+                        "isDisconnected": True,
+                        "reason": reason,
+                        "logFile": str(log_file) if log_file else "N/A",
+                        "disconnectTime": datetime.now().strftime("%H:%M:%S %d/%m/%Y"),
+                        "logUrl": f"/api/account/{port}/log"
+                    }
+                    player["balance"] = mem["lastKnownBalance"]
+                    earnings["perHourFormatted"] = mem["lastKnownPerHour"]
+                    earnings["totalEarnedFormatted"] = mem["lastKnownTotal"]
+                    earnings["uptimeFormatted"] = mem["lastKnownUptime"]
+                    shards["balanceFormatted"] = mem["lastKnownShards"]
+                    shards["perHourFormatted"] = mem["lastKnownShardsPerHour"]
+                else:
+                    data["disconnectInfo"] = {
+                        "isDisconnected": False,
+                        "reason": None,
+                        "logUrl": f"/api/account/{port}/log"
+                    }
+
+                data["balanceHistory"] = mem["balanceHistory"]
                 data["port"] = port
                 data["id"] = str(port)
-                data["gameConnected"] = data.get("inGame", True)
+                data["gameConnected"] = in_game
                 data["lastSeen"] = time.time()
                 return port, data
     except Exception:
@@ -394,16 +522,33 @@ def get_accounts_summary_list():
             "totalEarned": earnings.get("totalEarnedFormatted", "$0"),
             "uptime": earnings.get("uptimeFormatted", "00h 00m 00s"),
             "totalShardsEarned": shards.get("totalEarnedFormatted", "0"),
-            "axeSellHits": axe_sell.get("hits", 0),
-            "axeSellEarned": axe_sell.get("earnedFormatted", "$0"),
             "emeralds": inv.get("emeralds", 0),
-            "nearbyCount": len(nearby)
+            "nearbyCount": len(nearby),
+            "inGame": bool(d.get("inGame", True)),
+            "disconnectInfo": d.get("disconnectInfo", {"isDisconnected": False}),
+            "balanceHistory": d.get("balanceHistory", [])
         })
     return summary
 
 # ----------------------------------------------------------------------
 # Routes
 # ----------------------------------------------------------------------
+@app.route("/api/account/<acc_id>/log", methods=["GET"])
+def api_account_log_route(acc_id):
+    """Lấy chi tiết nhật ký log và nguyên nhân bot bị văng khỏi game"""
+    target_port = resolve_target_port(acc_id)
+    launcher = get_launcher_for_port(target_port) if target_port else "MultiMC"
+    log_file = get_launcher_log_path(launcher)
+    reason, snippet = extract_disconnect_reason(log_file)
+    return jsonify({
+        "account_id": acc_id,
+        "port": target_port,
+        "launcher": launcher,
+        "log_file": str(log_file) if log_file else "N/A",
+        "disconnect_reason": reason,
+        "log_snippet": snippet
+    })
+
 @app.route("/")
 def index():
     return send_from_directory("mobile_app", "index.html")

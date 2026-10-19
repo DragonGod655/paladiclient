@@ -1002,6 +1002,128 @@
             border-radius: var(--radius-full);
         }
 
+        /* Account Detail & Disconnect Inspector Styles */
+        .acc-disconnect-banner {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-left: 5px solid #e11d48;
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .acc-disconnect-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #be123c;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            background: #ffe4e6;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            width: fit-content;
+            border: 1px solid #fecdd3;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .acc-disconnect-link:hover {
+            background: #fda4af;
+            color: #881337;
+            transform: translateY(-1px);
+        }
+
+        .acc-detail-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .stat-box-modern {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .stat-box-modern .stat-label {
+            font-size: 0.74rem;
+            font-weight: 800;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .stat-box-modern .stat-value {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-heading);
+            letter-spacing: -0.5px;
+        }
+
+        .stat-box-modern .stat-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .history-table-container {
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .acc-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        .acc-history-table th {
+            background: #f8fafc;
+            color: var(--text-heading);
+            font-weight: 800;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-card);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .acc-history-table td {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-body);
+            font-weight: 500;
+        }
+
+        .acc-history-table tr:hover td {
+            background: #f1f5f9;
+        }
+
+        .badge-bal-plus {
+            color: #059669;
+            background: #ecfdf5;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            border: 1px solid #a7f3d0;
+            display: inline-block;
+        }
+
         /* Modal Styles */
         .modal-backdrop {
             position: fixed;
@@ -1415,6 +1537,9 @@
                     <!-- Dynamic Account Pills -->
                 </div>
 
+                <!-- Selected Account Quick Stats & Disconnect Alert Strip -->
+                <div id="pay-selected-acc-summary" style="margin-bottom: 16px;"></div>
+
                 <div class="pay-form-grid">
                     <div>
                         <label class="form-group-label">Tên Người Chơi Nhận (Khách):</label>
@@ -1521,6 +1646,11 @@
                 <div class="acc-vitals-grid" id="accounts-cards-container">
                     <!-- Dynamic Account Cards -->
                 </div>
+            </div>
+
+            <!-- Detailed Selected Account Inspector & Balance History -->
+            <div class="glass-card" id="selected-account-inspector" style="margin-top: 16px;">
+                <!-- Dynamically rendered when an account is selected -->
             </div>
         </div>
 
@@ -1629,6 +1759,39 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal Xem Chi Tiết Log & Lý Do Bị Văng -->
+    <div class="modal-backdrop" id="modal-disconnect-log" style="display: none;">
+        <div class="modal-box" style="max-width: 720px; width: 95%;">
+            <div class="modal-header" style="background: #fef2f2; border-bottom: 1px solid #fecaca;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.4rem;">🔴</span>
+                    <div>
+                        <h3 class="modal-title" id="log-modal-bot-name" style="color: #991b1b;">Lý Do Bot Bị Văng Game</h3>
+                        <span id="log-modal-bot-meta" style="font-size: 0.75rem; color: #b91c1c;">Chi tiết ngoại lệ từ Minecraft client log</span>
+                    </div>
+                </div>
+                <button type="button" class="modal-close" onclick="closeDisconnectLogModal()">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px;">
+                    <div style="font-weight: 800; color: #991b1b; font-size: 0.95rem; margin-bottom: 4px;">Nguyên nhân xác định:</div>
+                    <div id="log-modal-reason" style="font-size: 0.88rem; color: #7f1d1d; line-height: 1.5; font-weight: 600;">—</div>
+                </div>
+                <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 8px;">
+                    📁 File log: <code id="log-modal-filepath" style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; word-break: break-all;">—</code>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-heading);">Đoạn Log Nhật Ký Cuối Cùng (Latest Trace):</span>
+                    <button type="button" class="btn-selection-act" id="btn-copy-disconnect-log" onclick="copyDisconnectLog()">📋 Sao Chép Log</button>
+                </div>
+                <pre id="log-modal-snippet" style="background: #0f172a; color: #f87171; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.76rem; padding: 14px; border-radius: var(--radius-md); overflow: auto; max-height: 320px; white-space: pre-wrap; line-height: 1.4;"></pre>
+            </div>
+            <div class="modal-footer" style="background: #f8fafc;">
+                <button type="button" class="btn-modal cancel" onclick="closeDisconnectLogModal()">Đóng Cửa Sổ</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Cấu hình Nhanh -->
     <div class="modal-backdrop" id="modal-quick-cfg" style="display: none;">
@@ -2105,63 +2268,295 @@
         });
 
         // ------------------------------------------------------------------
-        // TAB 4: QUẢN LÝ ACC GAME
+        // TAB 4: QUẢN LÝ ACC GAME & CHI TIẾT SỐ DƯ, $/H, LOG VĂNG GAME
         // ------------------------------------------------------------------
+        window.openDisconnectLogModal = async (accId) => {
+            playSound('click');
+            const modal = document.getElementById('modal-disconnect-log');
+            const nameEl = document.getElementById('log-modal-bot-name');
+            const metaEl = document.getElementById('log-modal-bot-meta');
+            const reasonEl = document.getElementById('log-modal-reason');
+            const fileEl = document.getElementById('log-modal-filepath');
+            const snippetEl = document.getElementById('log-modal-snippet');
+
+            if (!modal) return;
+            modal.style.display = 'flex';
+            reasonEl.textContent = 'Đang đọc phân tích nguyên nhân từ server...';
+            snippetEl.textContent = 'Đang tải đoạn log cuối cùng từ Minecraft client...';
+
+            const acc = (state.accounts || []).find(a => String(a.id) === String(accId));
+            if (acc) {
+                nameEl.textContent = `🔴 Bot ${acc.name} - Lý do bị văng game`;
+                metaEl.textContent = `Launcher: ${acc.launcher || 'MultiMC'} • Port: ${acc.port || accId}`;
+                if (acc.disconnectInfo && acc.disconnectInfo.reason) {
+                    reasonEl.textContent = acc.disconnectInfo.reason;
+                    fileEl.textContent = acc.disconnectInfo.logFile || 'latest.log';
+                }
+            }
+
+            try {
+                const res = await fetch(`/api/account/${encodeURIComponent(accId)}/log`, { cache: 'no-store' });
+                const d = await res.json();
+                if (d) {
+                    if (d.disconnect_reason) reasonEl.textContent = d.disconnect_reason;
+                    if (d.log_file) fileEl.textContent = d.log_file;
+                    snippetEl.textContent = d.log_snippet || 'Không có đoạn log nào được ghi lại.';
+                }
+            } catch (err) {
+                snippetEl.textContent = 'Không thể tải log từ server: ' + err.message;
+            }
+        };
+
+        window.closeDisconnectLogModal = () => {
+            const modal = document.getElementById('modal-disconnect-log');
+            if (modal) modal.style.display = 'none';
+        };
+
+        window.copyDisconnectLog = () => {
+            const txt = document.getElementById('log-modal-snippet').textContent;
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('Đã sao chép toàn bộ log văng game!', '📋');
+            }).catch(() => {
+                showToast('Không thể sao chép tự động', '⚠️');
+            });
+        };
+
         const renderAccounts = (accounts, activeId) => {
             const strip = document.getElementById('pay-acc-strip');
+            const paySummary = document.getElementById('pay-selected-acc-summary');
             const cardsContainer = document.getElementById('accounts-cards-container');
+            const inspector = document.getElementById('selected-account-inspector');
             const badgeAccCount = document.getElementById('badge-acc-count');
             const sidebarName = document.getElementById('sidebar-bot-name');
             const payBadge = document.getElementById('pay-active-acc-badge');
 
             const count = accounts ? accounts.length : 0;
-            badgeAccCount.textContent = count;
+            if (badgeAccCount) badgeAccCount.textContent = count;
 
             if (!accounts || accounts.length === 0) {
-                strip.innerHTML = '<span style="font-size: 0.8rem; color: #94a3b8;">Đang tìm Minecraft clients trong MultiMC/Dawn...</span>';
-                cardsContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px;">Chưa mở tài khoản game nào.</div>';
+                if (strip) strip.innerHTML = '<span style="font-size: 0.8rem; color: #94a3b8;">Đang quét bot Minecraft (MultiMC / Dawn)...</span>';
+                if (cardsContainer) cardsContainer.innerHTML = '<div style="color: #94a3b8; padding: 20px;">Chưa mở tài khoản game nào.</div>';
+                if (inspector) inspector.innerHTML = '';
                 return;
             }
 
             const activeAcc = accounts.find(a => String(a.id) === String(activeId)) || accounts[0];
-            if (activeAcc) {
-                sidebarName.textContent = activeAcc.name;
-                payBadge.textContent = activeAcc.inGame ? `🟢 Bot: ${activeAcc.name} (${activeAcc.balance})` : `🔴 Bot: ${activeAcc.name} (OFFLINE)`;
-                payBadge.style.color = activeAcc.inGame ? '#16a34a' : '#dc2626';
-                payBadge.style.background = activeAcc.inGame ? '#dcfce7' : '#fee2e2';
+            const isOnline = Boolean(activeAcc && activeAcc.inGame);
+
+            if (sidebarName && activeAcc) sidebarName.textContent = activeAcc.name;
+            if (payBadge && activeAcc) {
+                payBadge.textContent = isOnline ? `🟢 Bot: ${activeAcc.name} (${activeAcc.balance})` : `🔴 Bot: ${activeAcc.name} (BỊ VĂNG)`;
+                payBadge.style.color = isOnline ? '#16a34a' : '#dc2626';
+                payBadge.style.background = isOnline ? '#dcfce7' : '#fee2e2';
             }
 
-            // Render Strip
-            strip.innerHTML = accounts.map(a => `
-                <button type="button" class="acc-pill-btn ${String(a.id) === String(activeId) ? 'active' : ''}" onclick="selectAccount('${a.id}')">
-                    <span class="acc-status-dot" style="background: ${a.inGame ? '#22c55e' : '#ef4444'}"></span>
-                    <span>${a.name}</span>
-                    <small style="opacity: 0.7;">(${a.balance})</small>
-                </button>
-            `).join('');
-
-            // Render Full Cards
-            cardsContainer.innerHTML = accounts.map(a => `
-                <div class="acc-vital-card ${String(a.id) === String(activeId) ? 'is-active' : ''}">
-                    <div class="vital-badge-row">
-                        <span style="font-weight: 800; font-size: 1rem; color: var(--text-heading);">${a.name}</span>
-                        <span style="font-size: 0.75rem; font-weight: 700; color: ${a.inGame ? '#16a34a' : '#ef4444'}; background: ${a.inGame ? '#dcfce7' : '#fee2e2'}; padding: 2px 8px; border-radius: var(--radius-full);">${a.inGame ? 'ONLINE' : 'OFFLINE'}</span>
-                    </div>
-                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">
-                        Số dư: <b style="color: #10b981;">${a.balance}</b> • Server: <b>${a.server || 'Đã vào'}</b>
-                    </div>
-                    <button type="button" class="btn-top-action ${String(a.id) === String(activeId) ? 'primary' : ''}" style="width: 100%; justify-content: center; margin-top: 8px;" onclick="selectAccount('${a.id}')">
-                        ${String(a.id) === String(activeId) ? '✓ Đang điều khiển' : '🎮 Chuyển sang acc này'}
+            // 1. Render Strip in Tab Pay
+            if (strip) {
+                strip.innerHTML = accounts.map(a => `
+                    <button type="button" class="acc-pill-btn ${String(a.id) === String(activeAcc.id) ? 'active' : ''}" onclick="selectAccount('${a.id}')">
+                        <span class="acc-status-dot" style="background: ${a.inGame ? '#22c55e' : '#ef4444'}"></span>
+                        <span>${a.name}</span>
+                        <small style="opacity: 0.8; font-weight: 800;">(${a.balance || '0$'})</small>
                     </button>
-                </div>
-            `).join('');
+                `).join('');
+            }
+
+            // 2. Render Selected Account Quick Banner in Tab Pay
+            if (paySummary && activeAcc) {
+                if (!isOnline) {
+                    paySummary.innerHTML = `
+                        <div class="acc-disconnect-banner" style="margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <strong style="color: #991b1b; font-size: 0.95rem;">🔴 BOT ${activeAcc.name} ĐÃ BỊ VĂNG KHỎI GAME</strong>
+                                    <div style="font-size: 0.8rem; color: #7f1d1d; margin-top: 2px;">
+                                        ${activeAcc.disconnectInfo?.reason || 'Internal Exception: java.net.SocketException: Connection reset'}
+                                    </div>
+                                </div>
+                                <a href="javascript:void(0)" class="acc-disconnect-link" onclick="openDisconnectLogModal('${activeAcc.id}')">
+                                    📄 Bấm Vào Đây Xem Log Chi Tiết ➔
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    paySummary.innerHTML = `
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 1.1rem;">⚡</span>
+                                <span style="font-size: 0.84rem; color: #166534; font-weight: 700;">
+                                    Đang kết nối: <b style="color: #15803d;">${activeAcc.name}</b> • Số dư: <b style="color: #059669; font-size: 0.95rem;">${activeAcc.balance}</b> • Tốc độ: <b style="color: #b45309;">${activeAcc.perHour || '$0/h'}</b>
+                                </span>
+                            </div>
+                            <span style="font-size: 0.76rem; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: var(--radius-full); font-weight: 800;">ONLINE (IN-GAME)</span>
+                        </div>
+                    `;
+                }
+            }
+
+            // 3. Render Multi-Account Cards in Tab Accounts
+            if (cardsContainer) {
+                cardsContainer.innerHTML = accounts.map(a => {
+                    const isSel = String(a.id) === String(activeAcc.id);
+                    const onl = Boolean(a.inGame);
+                    return `
+                        <div class="acc-vital-card ${isSel ? 'is-active' : ''}" style="cursor: pointer;" onclick="selectAccount('${a.id}')">
+                            <div class="vital-badge-row">
+                                <span style="font-weight: 800; font-size: 1.05rem; color: var(--text-heading);">${a.name}</span>
+                                <span style="font-size: 0.75rem; font-weight: 800; color: ${onl ? '#16a34a' : '#ef4444'}; background: ${onl ? '#dcfce7' : '#fee2e2'}; padding: 3px 10px; border-radius: var(--radius-full);">
+                                    ${onl ? 'ONLINE' : 'BỊ VĂNG'}
+                                </span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 5px; font-size: 0.83rem; margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--text-muted);">Số dư hiện tại:</span>
+                                    <b style="color: #059669; font-size: 0.95rem;">${a.balance || '0$'}</b>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--text-muted);">Tốc độ kiếm:</span>
+                                    <b style="color: #b45309;">${a.perHour || '$0/h'}</b>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--text-muted);">Tổng đã cày:</span>
+                                    <b style="color: var(--text-heading);">${a.totalEarned || '$0'}</b>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--text-muted);">Launcher / Cổng:</span>
+                                    <span style="color: var(--text-sub); font-size: 0.76rem;">${a.launcher || 'MultiMC'} (${a.port || a.id})</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-top-action ${isSel ? 'primary' : ''}" style="width: 100%; justify-content: center; padding: 8px 0;" onclick="event.stopPropagation(); selectAccount('${a.id}')">
+                                ${isSel ? '✓ Đang xem chi tiết' : '🔍 Bấm để xem lịch sử bal'}
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 4. Render Selected Account Inspector (Balance, $/h, Disconnect Reason, Balance History)
+            if (inspector && activeAcc) {
+                const historyList = activeAcc.balanceHistory || [];
+                let disconnectHtml = '';
+                if (!isOnline) {
+                    disconnectHtml = `
+                        <div class="acc-disconnect-banner">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: gap: 10px;">
+                                <div>
+                                    <div style="font-size: 1rem; font-weight: 800; color: #991b1b; display: flex; align-items: center; gap: 6px;">
+                                        <span>🔴</span> TÀI KHOẢN NÀY ĐÃ BỊ VĂNG KHỎI GAME (DISCONNECTED)
+                                    </div>
+                                    <div style="font-size: 0.86rem; color: #7f1d1d; margin-top: 4px; line-height: 1.4;">
+                                        <b>Lý do:</b> ${activeAcc.disconnectInfo?.reason || 'Mất kết nối máy chủ / Socket Exception'}
+                                    </div>
+                                </div>
+                                <button type="button" class="acc-disconnect-link" onclick="openDisconnectLogModal('${activeAcc.id}')">
+                                    <span>📄 Xem Chi Tiết Log Văng Game</span>
+                                    <span>➔</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let historyRows = '';
+                if (historyList.length > 0) {
+                    historyRows = historyList.map(h => `
+                        <tr>
+                            <td style="font-family: monospace; font-weight: 700; color: var(--text-sub);">${h.time || '—'}</td>
+                            <td><span class="badge-bal-plus">${h.amount || '—'}</span></td>
+                            <td style="font-weight: 600;">${h.type || 'Cộng tiền'}</td>
+                            <td style="color: var(--text-sub); font-size: 0.8rem;">${h.note || 'Biến động số dư'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    historyRows = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">
+                                Chưa có giao dịch biến động số dư nào được ghi nhận gần đây cho tài khoản này.
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                inspector.innerHTML = `
+                    <div class="card-header-row" style="margin-bottom: 16px;">
+                        <div class="card-title-group">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-heading);">📊 BẢNG THEO DÕI SỐ DƯ & CÀY TIỀN: ${activeAcc.name}</h3>
+                                <span style="font-size: 0.78rem; font-weight: 800; color: ${isOnline ? '#16a34a' : '#ef4444'}; background: ${isOnline ? '#dcfce7' : '#fee2e2'}; padding: 4px 10px; border-radius: var(--radius-full);">
+                                    ${isOnline ? '🟢 ONLINE (TRONG GAME)' : '🔴 BỊ VĂNG (OFFLINE)'}
+                                </span>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--text-sub);">
+                                Launcher: <b>${activeAcc.launcher || 'MultiMC / Dawn'}</b> • Cổng: <b>${activeAcc.port || activeAcc.id}</b> • Server: <b>${activeAcc.server || 'Đã vào'}</b>
+                            </span>
+                        </div>
+                    </div>
+
+                    ${disconnectHtml}
+
+                    <!-- 4-Stat Box Grid -->
+                    <div class="acc-detail-stats-grid">
+                        <div class="stat-box-modern" style="border-left: 4px solid #10b981;">
+                            <span class="stat-label">💵 Số Dư Hiện Tại (Bal)</span>
+                            <span class="stat-value" style="color: #059669;">${activeAcc.balance || '0$'}</span>
+                            <span class="stat-sub">Được lưu giữ liên tục, không bao giờ bị nhảy về 0</span>
+                        </div>
+                        <div class="stat-box-modern" style="border-left: 4px solid #f59e0b;">
+                            <span class="stat-label">⚡ Tốc Độ Kiếm Tiền ($/h)</span>
+                            <span class="stat-value" style="color: #d97706;">${activeAcc.perHour || '$0/h'}</span>
+                            <span class="stat-sub">Tính toán dựa trên tốc độ bán AutoSell thực tế</span>
+                        </div>
+                        <div class="stat-box-modern" style="border-left: 4px solid #3b82f6;">
+                            <span class="stat-label">💰 Tổng Tiền Đã Cày</span>
+                            <span class="stat-value" style="color: #2563eb;">${activeAcc.totalEarned || '$0'}</span>
+                            <span class="stat-sub">⏱️ Thời gian cày: <b>${activeAcc.uptime || '00h 00m'}</b></span>
+                        </div>
+                        <div class="stat-box-modern" style="border-left: 4px solid #8b5cf6;">
+                            <span class="stat-label">⭐ Shards (Sao) & Tốc Độ</span>
+                            <span class="stat-value" style="color: #7c3aed;">${activeAcc.shards || '0 ★'}</span>
+                            <span class="stat-sub">Tăng trưởng: <b>${activeAcc.shardsPerHour || '+0/h'}</b></span>
+                        </div>
+                    </div>
+
+                    <!-- Balance History Table -->
+                    <div style="margin-top: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div>
+                                <h4 style="font-size: 1rem; font-weight: 800; color: var(--text-heading); margin: 0;">📜 LỊCH SỬ BIẾN ĐỘNG SỐ DƯ (BALANCE HISTORY)</h4>
+                                <span style="font-size: 0.78rem; color: var(--text-sub);">Toàn bộ các mốc cộng tiền được tự động trích xuất trực tiếp từ chat log</span>
+                            </div>
+                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary-blue); background: var(--primary-blue-light); padding: 4px 10px; border-radius: var(--radius-full);">
+                                ${historyList.length} giao dịch gần nhất
+                            </span>
+                        </div>
+                        <div class="history-table-container">
+                            <table class="acc-history-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 110px;">Thời Gian</th>
+                                        <th style="width: 130px;">Biến Động</th>
+                                        <th style="width: 220px;">Loại Giao Dịch</th>
+                                        <th>Ghi Chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${historyRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
         };
 
         window.selectAccount = (id) => {
-            state.selectedAccId = id;
+            state.selectedAccId = String(id);
+            try { localStorage.setItem('paladi_selected_bot', String(id)); } catch (e) {}
             playSound('click');
-            renderAccounts(state.accounts, id);
-            showToast('Đã chọn tài khoản bot!', '🎮');
+            renderAccounts(state.accounts, state.selectedAccId);
+            const chosen = (state.accounts || []).find(a => String(a.id) === String(id));
+            showToast('Đã chọn bot: ' + (chosen ? chosen.name : id), '🎮');
         };
 
         // ------------------------------------------------------------------
@@ -2226,15 +2621,23 @@
 
         const fetchStatusData = async () => {
             try {
-                const accParam = state.selectedAccId ? `?acc=${encodeURIComponent(state.selectedAccId)}` : '';
+                const storedId = localStorage.getItem('paladi_selected_bot');
+                const accParam = (state.selectedAccId || storedId) ? `?acc=${encodeURIComponent(state.selectedAccId || storedId)}` : '';
                 const res = await fetch(`/api/status${accParam}`, { cache: 'no-store' });
                 const data = await res.json();
 
-                if (Array.isArray(data.accounts)) {
+                if (Array.isArray(data.accounts) && data.accounts.length > 0) {
                     state.accounts = data.accounts;
-                    const activeId = data.activeAccountId || (data.accounts.length > 0 ? data.accounts[0].id : null);
-                    if (!state.selectedAccId || !data.accounts.some(a => String(a.id) === String(state.selectedAccId))) {
-                        state.selectedAccId = activeId;
+                    
+                    // Pin to selected account and never bounce
+                    if (!state.selectedAccId) {
+                        if (storedId && data.accounts.some(a => String(a.id) === String(storedId))) {
+                            state.selectedAccId = String(storedId);
+                        } else {
+                            state.selectedAccId = String(data.activeAccountId || data.accounts[0].id);
+                        }
+                    } else if (!data.accounts.some(a => String(a.id) === String(state.selectedAccId))) {
+                        state.selectedAccId = String(data.accounts[0].id);
                     }
                     renderAccounts(data.accounts, state.selectedAccId);
                 }
@@ -2245,7 +2648,8 @@
 
                 if (data.public_url) {
                     state.publicUrl = data.public_url;
-                    document.getElementById('display-4g-link').textContent = data.public_url;
+                    const dEl = document.getElementById('display-4g-link');
+                    if (dEl) dEl.textContent = data.public_url;
                 }
             } catch (e) {}
         };
